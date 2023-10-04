@@ -3,27 +3,38 @@
 #include <conio.h>
 #include <cstdio>
 #include "m_local_resources.h"
+#include "models/Land.h"
 
 using namespace std;
 
 #define WIN_WIDTH 1030
 #define WIN_HEIGHT 600
 
-//卡槽起点x
+//卡槽起始坐标
 #define CARD_SLOT_START_X 250
-//卡槽起点y
 #define CARD_SLOT_START_Y 0
 
-//卡片宽度
+//卡片宽高
 #define BASE_CARD_WIDTH 52
-//卡片高度
 #define BASE_CARD_HEIGHT 72
 //卡槽之间间距
 #define SPACE_BETWEEN_CARD 2
-//卡片卡槽左上角x
+//卡片卡槽起始坐标
 #define CARD_START_X 325
-//卡片卡槽左上角y
 #define CARD_START_Y 7
+
+//土地行列数
+#define LAND_MAP_ROW 5
+#define LAND_MAP_COLUMN 9
+//土地左上角起始坐标
+#define LAND_MAP_START_X 250
+#define LAND_MAP_START_Y 80
+//土地右下角结束坐标
+#define LAND_MAP_END_X 988
+#define LAND_MAP_END_Y 580
+//每块土地宽高
+#define LAND_MAP_SINGLE_WIDTH 80
+#define LAND_MAP_SINGLE_HEIGHT 100
 
 //是否首次绘制
 bool isFirstDraw = true;
@@ -36,6 +47,9 @@ int card_slot_x_coordinate[PLANTS_COUNT][2];
 int curMovePlantX, curMovePlantY;
 //当前移动的植物位置, 从1开始, 用于判断是否选中植物, 0->未选择植物
 int curMovePlantPos;
+
+//土地
+struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
 
 IMAGE imgBg;
 IMAGE imgBar;
@@ -60,6 +74,7 @@ void gameInit() {
 
     //加载植物图片
     memset(imgPlants, 0, sizeof(imgPlants));
+    memset(landMap, 0, sizeof(landMap));
 
     loadSunflowerPics(17);
     loadPeashooterPics(12);
@@ -99,9 +114,22 @@ void updateWindow() {
     }
 
     if (curMovePlantPos > 0) {
-        cout << "choice plant -> " << curMovePlantPos << endl;
         IMAGE* img = imgPlants[curMovePlantPos - 1][0];
-        putimage(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, imgPlants[curMovePlantPos - 1][0]);
+        putimage(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
+    }
+
+    //绘制土地植物
+    for (int i = 0; i < LAND_MAP_ROW; i ++) {
+        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
+            if (landMap[i][j].type > 0) {
+                //获取当前选择的植物下标
+                int curPlantIndex = landMap[i][j].type - 1;
+                IMAGE* img = imgPlants[curPlantIndex][landMap[i][j].frameIndex];
+                int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
+                int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
+                putimage(x, y, imgPlants[curPlantIndex][landMap[i][j].frameIndex]);
+            }
+        }
     }
 
     //结束缓冲
@@ -121,7 +149,7 @@ void userClickEvent() {
             if (x_value && y_value) {
                 for (int x_index = 0; x_index < PLANTS_COUNT; x_index ++) {
                     if (message.x > card_slot_x_coordinate[x_index][0] && message.x < card_slot_x_coordinate[x_index][1]) {
-                        cout << "valid click -> " << x_index << endl;
+//                        cout << "valid click -> " << x_index << endl;
                         status = 1;
                         curMovePlantX = message.x;
                         curMovePlantY = message.y;
@@ -136,8 +164,21 @@ void userClickEvent() {
             curMovePlantY = message.y;
         } else if (message.message == WM_LBUTTONUP) {
             //鼠标抬起事件
-            cout << "up" << endl;
             if (status == 1) {
+                //x范围
+                int x_value = message.x > LAND_MAP_START_X && message.x < LAND_MAP_END_X;
+                //y范围
+                int y_value = message.y > LAND_MAP_START_Y && message.y < LAND_MAP_END_Y;
+                if (x_value && y_value) {
+                    int row = (message.y - LAND_MAP_START_Y) / LAND_MAP_SINGLE_HEIGHT;
+                    int column = (message.x - LAND_MAP_START_X) / LAND_MAP_SINGLE_WIDTH;
+//                    Land curLand = ;
+                    if (landMap[row][column].type <= 0) {
+                        landMap[row][column].type = curMovePlantPos;
+                        landMap[row][column].frameIndex = 0;
+                        cout << "event: [up] (" << row << "," << column << ") plant index = " << landMap[row][column].type << endl;
+                    }
+                }
                 status = 0;
                 curMovePlantPos = 0;
             }
