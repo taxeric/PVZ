@@ -186,6 +186,21 @@ void userClickEvent() {
     }
 }
 
+void updateGame() {
+    for (int i = 0; i < LAND_MAP_ROW; i ++) {
+        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
+            if (landMap[i][j].type > 0) {
+                landMap[i][j].frameIndex ++;
+                int plantIndex = landMap[i][j].type - 1;
+                int frameIndex = landMap[i][j].frameIndex;
+                if (imgPlants[plantIndex][frameIndex] == nullptr) {
+                    landMap[i][j].frameIndex = 0;
+                }
+            }
+        }
+    }
+}
+
 int main() {
     std::cout << "Hello, PVZ!" << std::endl;
 
@@ -194,6 +209,7 @@ int main() {
     while (true) {
         userClickEvent();
         updateWindow();
+        updateGame();
     }
 
     _getch();
