@@ -60,6 +60,18 @@ const int max_plant_pics = 21;
 //植物图片
 IMAGE* imgPlants[PLANTS_COUNT][max_plant_pics];
 
+int getDelay() {
+    static unsigned long long lastTime = 0;
+    unsigned long long curTime = GetTickCount();
+    if (lastTime == 0) {
+        lastTime = curTime;
+        return 0;
+    }
+    int ret = curTime - lastTime;
+    lastTime = curTime;
+    return ret;
+}
+
 void gameInit() {
     loadimage(&imgBg, BASE_RES_BG_PATH);
     loadimage(&imgBar, BASE_RES_BAR_BG_PATH);
@@ -113,11 +125,6 @@ void updateWindow() {
         putimage(x, CARD_START_Y, &imgCards[i]);
     }
 
-    if (curMovePlantPos > 0) {
-        IMAGE* img = imgPlants[curMovePlantPos - 1][0];
-        putimage(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
-    }
-
     //绘制土地植物
     for (int i = 0; i < LAND_MAP_ROW; i ++) {
         for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
@@ -130,6 +137,11 @@ void updateWindow() {
                 putimage(x, y, imgPlants[curPlantIndex][landMap[i][j].frameIndex]);
             }
         }
+    }
+
+    if (curMovePlantPos > 0) {
+        IMAGE* img = imgPlants[curMovePlantPos - 1][0];
+        putimage(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
     }
 
     //结束缓冲
@@ -206,10 +218,23 @@ int main() {
 
     gameInit();
 
+    int timer = 0;
+    bool refreshFlag = true;
     while (true) {
+
         userClickEvent();
-        updateWindow();
-        updateGame();
+        timer += getDelay();
+
+        if (timer > 30) {
+            refreshFlag = true;
+            timer = 0;
+        }
+
+        if (refreshFlag) {
+            refreshFlag = false;
+            updateWindow();
+            updateGame();
+        }
     }
 
     _getch();
