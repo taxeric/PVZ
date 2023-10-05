@@ -11,4 +11,5 @@ link_libraries(libEasyX.a libgdi32.a libole32.a)
 add_executable(PVZ main.cpp
         m_local_resources.h
         models/Land.h
-        models/SunshineBall.h)
+        models/SunshineBall.h
+        models/Zombie.h)

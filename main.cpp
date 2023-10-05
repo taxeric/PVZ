@@ -6,6 +6,7 @@
 #include "m_local_resources.h"
 #include "models/Land.h"
 #include "models/SunshineBall.h"
+#include "models/Zombie.h"
 
 using namespace std;
 
@@ -13,6 +14,8 @@ using namespace std;
 #define WIN_HEIGHT 600
 //游戏界面偏移
 #define WIN_OFFSET 130
+//图片资源最大数量
+#define BASE_RES_PICS_AMOUNT 21
 
 //卡槽起始坐标
 #define CARD_SLOT_START_X (250 - WIN_OFFSET)
@@ -62,9 +65,8 @@ int curMovePlantPos;
 struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
 //阳光池
 struct SunshineBall sunshineBalls[10];
-//阳光图片数
-const int max_sunshine_pics = 21;
-IMAGE imgSunshineBallPics[max_sunshine_pics];
+//阳光图片
+IMAGE imgSunshineBallPics[BASE_RES_PICS_AMOUNT];
 //阳光总数
 int gross_sunshine;
 //阳光pic宽高
@@ -74,10 +76,13 @@ IMAGE imgBg;
 IMAGE imgBar;
 //植物卡槽图片
 IMAGE imgCardsPics[PLANTS_COUNT];
-//最大图片数量
-const int max_plant_pics = 21;
 //植物图片
-IMAGE* imgPlantsPics[PLANTS_COUNT][max_plant_pics];
+IMAGE* imgPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
+
+//僵尸池
+struct Zombie zombies[10];
+//僵尸图片
+IMAGE imgZombiesPics[BASE_RES_PICS_AMOUNT];
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -97,7 +102,7 @@ void gameInit() {
 
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
     //加载阳光图片
-    loadSunshineBallPics(max_sunshine_pics);
+    loadSunshineBallPics(BASE_RES_PICS_AMOUNT);
     //设置图片宽高
     sunshinePicWidth = imgSunshineBallPics[0].getwidth();
     sunshinePicHeight = imgSunshineBallPics[0].getheight();
@@ -128,6 +133,10 @@ void gameInit() {
     loadChomperPics(12);
     loadRepeatPeaShootPics(14);
 
+    //加载僵尸数据
+    memset(zombies, 0, sizeof(zombies));
+    loadNormalZombieWalkPics(21);
+
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
     curMovePlantPos = 0;
@@ -144,6 +153,16 @@ void gameInit() {
     settextstyle(&f);
     setbkmode(TRANSPARENT);
     setcolor(BLACK);
+}
+
+void drawZombies() {
+    int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
+    for (int i = 0; i < zombieMax; i ++) {
+        if (zombies[i].isUsed) {
+            IMAGE* img = &imgZombiesPics[zombies[i].frameIndex];
+            putimage(zombies[i].x, zombies[i].y - img->getheight(), img);
+        }
+    }
 }
 
 void updateWindow() {
@@ -199,6 +218,8 @@ void updateWindow() {
     char scoreText[8];
     sprintf_s(scoreText, sizeof(scoreText), "%d", gross_sunshine);
     outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
+
+    drawZombies();
 
     //结束缓冲
     EndBatchDraw();
@@ -302,7 +323,7 @@ void updateSunshine() {
     int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < ballMax; i ++) {
         if (sunshineBalls[i].isUsed) {
-            sunshineBalls[i].frameIndex = (sunshineBalls[i].frameIndex + 1) % max_sunshine_pics;
+            sunshineBalls[i].frameIndex = (sunshineBalls[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
             if (sunshineBalls[i].timer == 0) {
                 sunshineBalls[i].y += 2;
             }
@@ -311,6 +332,41 @@ void updateSunshine() {
                 if (sunshineBalls[i].timer > 100) {
                     sunshineBalls[i].isUsed = false;
                 }
+            }
+        }
+    }
+}
+
+void createZombies() {
+    static int zombieFre = 500;
+    static int count = 0;
+    count ++;
+    if (count > zombieFre) {
+        count = 0;
+        zombieFre = rand() % 200 + 300;
+        int i;
+        int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
+        for (i = 0; i < zombieMax && zombies[i].isUsed; i ++);
+        if (i < zombieMax) {
+            zombies[i].isUsed = true;
+            zombies[i].frameIndex = 0;
+            zombies[i].x = WIN_WIDTH;
+            zombies[i].y = LAND_MAP_START_Y * 2 + (rand() % 3 + 1) * LAND_MAP_SINGLE_HEIGHT;
+            zombies[i].speed = 1;
+        }
+    }
+}
+
+void updateZombies() {
+    int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
+    for (int i = 0; i < zombieMax; i ++) {
+        if (zombies[i].isUsed) {
+            zombies[i].x -= zombies[i].speed;
+            zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
+            if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
+                //game over ~~~
+                cout << "game over ~~~" << endl;
+                exit(0);
             }
         }
     }
@@ -332,6 +388,9 @@ void updateGame() {
 
     createSunshine();
     updateSunshine();
+
+    createZombies();
+    updateZombies();
 }
 
 void startMenuUI() {
@@ -497,4 +556,22 @@ void loadRepeatPeaShootPics(int size) {
             break;
         }
     }
+}
+
+void loadNormalZombieWalkPics(int size) {
+    char fname[64];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_NORMAL_ZOMBIE_WALK_PATH, "Zombie_", i);
+        if (fileExist(fname)) {
+            loadimage(&imgZombiesPics[i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadNormalZombieAttackPics(int size) {
+}
+
+void loadZombieBoomDiePics(int size) {
 }

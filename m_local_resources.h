@@ -58,7 +58,56 @@ enum {
 //向日葵图片路径
 #define RES_PIC_REPEATERPEA_PATH "../res/graphics/Plants/RepeaterPea/"
 
+//普通僵尸行走图片路径
+#define RES_PIC_NORMAL_ZOMBIE_WALK_PATH "../res/graphics/Zombies/NormalZombie/Zombie/"
+//普通僵尸攻击图片路径
+#define RES_PIC_NORMAL_ZOMBIE_ATTACK_PATH "../res/graphics/Zombies/NormalZombie/ZombieAttack/"
+//普通僵尸头掉了图片路径
+#define RES_PIC_NORMAL_ZOMBIE_HEAD_PATH "../res/graphics/Zombies/NormalZombie/ZombieHead/"
+//普通僵尸头掉了身体图片路径
+#define RES_PIC_NORMAL_ZOMBIE_LOST_HEAD_PATH "../res/graphics/Zombies/NormalZombie/ZombieLostHead/"
+//普通僵尸死亡图片路径
+#define RES_PIC_NORMAL_ZOMBIE_DIE_PATH "../res/graphics/Zombies/NormalZombie/ZombieDie/"
+//普通僵尸因爆炸死亡图片路径
+#define RES_PIC_NORMAL_ZOMBIE_BOOM_DIE_PATH "../res/graphics/Zombies/NormalZombie/BoomDie/"
+
 void loadSunshineBallPics(int size);
+
+/**
+ * 普通僵尸行走
+ * @param size
+ */
+void loadNormalZombieWalkPics(int size);
+
+/**
+ * 普通僵尸攻击
+ * @param size
+ */
+void loadNormalZombieAttackPics(int size);
+
+/**
+ * 普通僵尸头掉了
+ * @param size
+ */
+void loadNormalZombieHeadPics(int size);
+
+/**
+ * 普通僵尸头掉了后的身体
+ * @param size
+ */
+void loadNormalZombieLostHeadPics(int size);
+
+/**
+ * 普通僵尸死亡
+ * @param size
+ */
+void loadNormalZombieDiePics(int size);
+
+/**
+ * 普通僵尸因爆炸死亡
+ * @param size
+ */
+void loadZombieBoomDiePics(int size);
 
 void loadSunflowerPics(int size);
 void loadPeashooterPics(int size);
