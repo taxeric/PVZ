@@ -7,11 +7,13 @@
 
 using namespace std;
 
-#define WIN_WIDTH 1030
+#define WIN_WIDTH 900
 #define WIN_HEIGHT 600
+//游戏界面偏移
+#define WIN_OFFSET 130
 
 //卡槽起始坐标
-#define CARD_SLOT_START_X 250
+#define CARD_SLOT_START_X (250 - WIN_OFFSET)
 #define CARD_SLOT_START_Y 0
 
 //卡片宽高
@@ -20,17 +22,17 @@ using namespace std;
 //卡槽之间间距
 #define SPACE_BETWEEN_CARD 2
 //卡片卡槽起始坐标
-#define CARD_START_X 325
+#define CARD_START_X (325 - WIN_OFFSET)
 #define CARD_START_Y 7
 
 //土地行列数
 #define LAND_MAP_ROW 5
 #define LAND_MAP_COLUMN 9
 //土地左上角起始坐标
-#define LAND_MAP_START_X 250
+#define LAND_MAP_START_X (250 - WIN_OFFSET)
 #define LAND_MAP_START_Y 80
 //土地右下角结束坐标
-#define LAND_MAP_END_X 988
+#define LAND_MAP_END_X (988 - WIN_OFFSET)
 #define LAND_MAP_END_Y 580
 //每块土地宽高
 #define LAND_MAP_SINGLE_WIDTH 80
@@ -106,7 +108,7 @@ void updateWindow() {
     //缓冲
     BeginBatchDraw();
 
-    putimage(0, 0, &imgBg);
+    putimage(-130, 0, &imgBg);
     putimage(CARD_SLOT_START_X, CARD_SLOT_START_Y, &imgBar);
     setbkcolor(TRANSPARENT);
 
@@ -213,10 +215,45 @@ void updateGame() {
     }
 }
 
+void startMenuUI() {
+    IMAGE imgStartUIBg, imgAdventure0, imgAdventure1;
+    loadimage(&imgStartUIBg, BASE_RES_START_MENU_PATH);
+    loadimage(&imgAdventure0, BASE_RES_ADVENTURE_0_PATH, 300, 80);
+    loadimage(&imgAdventure1, BASE_RES_ADVENTURE_1_PATH, 300, 80);
+    bool action_flag = false;
+    bool move_flag = false;
+    while (true) {
+        BeginBatchDraw();
+
+        putimage(0, 0, &imgStartUIBg);
+        putimage(480, 80, move_flag ? &imgAdventure1 : &imgAdventure0);
+
+        ExMessage message{};
+        if (peekmessage(&message)) {
+            if (message.message == WM_LBUTTONUP && action_flag) {
+                return;
+            } else if (message.message == WM_MOUSEMOVE) {
+                bool x_value = message.x > 480 && message.x < 780;
+                bool y_value = message.y > 80 && message.y < 160;
+                if (x_value && y_value) {
+                    move_flag = true;
+                    action_flag = true;
+                } else {
+                    move_flag = false;
+                    action_flag = false;
+                }
+            }
+        }
+
+        EndBatchDraw();
+    }
+}
+
 int main() {
     std::cout << "Hello, PVZ!" << std::endl;
 
     gameInit();
+    startMenuUI();
 
     int timer = 0;
     bool refreshFlag = true;

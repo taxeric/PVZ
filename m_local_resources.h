@@ -16,6 +16,11 @@ enum {
 };
 
 #define BASE_RES_PATH "../res/graphics/"
+
+#define BASE_RES_START_MENU_PATH "../res/graphics/Screen/MainMenu.png"
+#define BASE_RES_ADVENTURE_0_PATH "../res/graphics/Screen/Adventure_0.png"
+#define BASE_RES_ADVENTURE_1_PATH "../res/graphics/Screen/Adventure_1.png"
+
 #define BASE_RES_BG_PATH "../res/graphics/Items/Background/Background_0.jpg"
 #define BASE_RES_BAR_BG_PATH "../res/graphics/Screen/ChooserBackground.png"
 
