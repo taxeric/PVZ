@@ -24,6 +24,9 @@ enum {
 #define BASE_RES_BG_PATH "../res/graphics/Items/Background/Background_0.jpg"
 #define BASE_RES_BAR_BG_PATH "../res/graphics/Screen/ChooserBackground.png"
 
+//阳光路径
+#define RES_PIC_SUNSHINE_PATH "../res/graphics/Plants/Sun/"
+
 //向日葵卡槽
 #define RES_CARD_PIC_SUNFLOWER "../res/graphics/Cards/card_sunflower.png"
 //向日葵图片路径
@@ -54,6 +57,8 @@ enum {
 #define RES_CARD_PIC_REPEATERPEA "../res/graphics/Cards/card_repeaterpea.png"
 //向日葵图片路径
 #define RES_PIC_REPEATERPEA_PATH "../res/graphics/Plants/RepeaterPea/"
+
+void loadSunshineBallPics(int size);
 
 void loadSunflowerPics(int size);
 void loadPeashooterPics(int size);

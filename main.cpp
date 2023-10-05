@@ -2,8 +2,10 @@
 #include <graphics.h>
 #include <conio.h>
 #include <cstdio>
+#include <ctime>
 #include "m_local_resources.h"
 #include "models/Land.h"
+#include "models/SunshineBall.h"
 
 using namespace std;
 
@@ -52,15 +54,20 @@ int curMovePlantPos;
 
 //土地
 struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
+//阳光
+struct SunshineBall sunshineBalls[10];
+//阳光图片数
+const int max_sunshine_pics = 21;
+IMAGE imgSunshineBallPics[max_sunshine_pics];
 
 IMAGE imgBg;
 IMAGE imgBar;
 //植物卡槽图片
-IMAGE imgCards[PLANTS_COUNT];
+IMAGE imgCardsPics[PLANTS_COUNT];
 //最大图片数量
 const int max_plant_pics = 21;
 //植物图片
-IMAGE* imgPlants[PLANTS_COUNT][max_plant_pics];
+IMAGE* imgPlantsPics[PLANTS_COUNT][max_plant_pics];
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -78,18 +85,25 @@ void gameInit() {
     loadimage(&imgBg, BASE_RES_BG_PATH);
     loadimage(&imgBar, BASE_RES_BAR_BG_PATH);
 
-    //加载植物卡槽图片
-    loadimage(&imgCards[0], RES_CARD_PIC_SUNFLOWER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCards[1], RES_CARD_PIC_PEASHOOTER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCards[2], RES_CARD_PIC_POTATOMINE, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCards[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCards[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCards[5], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    //加载阳光图片
+    memset(sunshineBalls, 0, sizeof(sunshineBalls));
+    loadSunshineBallPics(max_sunshine_pics);
+    //阳光随机数种子
+    srand(time(nullptr));
 
-    //加载植物图片
-    memset(imgPlants, 0, sizeof(imgPlants));
+    //加载植物卡槽图片
+    loadimage(&imgCardsPics[0], RES_CARD_PIC_SUNFLOWER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgCardsPics[1], RES_CARD_PIC_PEASHOOTER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgCardsPics[2], RES_CARD_PIC_POTATOMINE, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgCardsPics[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgCardsPics[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgCardsPics[5], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+
+    //土地
     memset(landMap, 0, sizeof(landMap));
 
+    //加载植物图片
+    memset(imgPlantsPics, 0, sizeof(imgPlantsPics));
     loadSunflowerPics(17);
     loadPeashooterPics(12);
     loadPotatoMinePics(12);
@@ -124,7 +138,7 @@ void updateWindow() {
             card_slot_x_coordinate[i][0] = x;
             card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
         }
-        putimage(x, CARD_START_Y, &imgCards[i]);
+        putimage(x, CARD_START_Y, &imgCardsPics[i]);
     }
 
     //绘制土地植物
@@ -133,17 +147,25 @@ void updateWindow() {
             if (landMap[i][j].type > 0) {
                 //获取当前选择的植物下标
                 int curPlantIndex = landMap[i][j].type - 1;
-                IMAGE* img = imgPlants[curPlantIndex][landMap[i][j].frameIndex];
+                IMAGE* img = imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
                 int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
                 int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
-                putimage(x, y, imgPlants[curPlantIndex][landMap[i][j].frameIndex]);
+                putimage(x, y, imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
             }
         }
     }
 
     if (curMovePlantPos > 0) {
-        IMAGE* img = imgPlants[curMovePlantPos - 1][0];
+        IMAGE* img = imgPlantsPics[curMovePlantPos - 1][0];
         putimage(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
+    }
+
+    int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
+    for (int i = 0; i < ballMax; i ++) {
+        if (sunshineBalls[i].isUsed) {
+            IMAGE* sunshineImg = &imgSunshineBallPics[sunshineBalls[i].frameIndex];
+            putimage(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
+        }
     }
 
     //结束缓冲
@@ -200,6 +222,48 @@ void userClickEvent() {
     }
 }
 
+void createSunshine() {
+    static int count = 0;
+    static int fre = 400;
+    count ++;
+    if (count >= fre) {
+        fre = 200 + rand() % 20;
+        count = 0;
+        int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
+        int i;
+        for (i = 0; i < ballMax && sunshineBalls[i].isUsed; i ++);
+        if (i >= ballMax) {
+            return;
+        }
+        sunshineBalls[i].isUsed = true;
+        sunshineBalls[i].frameIndex = 0;
+        sunshineBalls[i].x = LAND_MAP_START_X + rand() % (LAND_MAP_END_X - LAND_MAP_START_X);
+//    sunshineBalls[i].y = LAND_MAP_START_Y + rand() % (LAND_MAP_END_Y - LAND_MAP_START_Y);
+        sunshineBalls[i].y = LAND_MAP_START_Y;
+        sunshineBalls[i].destY = LAND_MAP_START_Y + (rand() % 4) * 90;
+        sunshineBalls[i].timer = 0;
+        cout << "produce sunshine - " << i << " (" << sunshineBalls[i].x << "," << sunshineBalls[i].y << "," << sunshineBalls[i].destY << ")" << endl;
+    }
+}
+
+void updateSunshine() {
+    int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
+    for (int i = 0; i < ballMax; i ++) {
+        if (sunshineBalls[i].isUsed) {
+            sunshineBalls[i].frameIndex = (sunshineBalls[i].frameIndex + 1) % max_sunshine_pics;
+            if (sunshineBalls[i].timer == 0) {
+                sunshineBalls[i].y += 2;
+            }
+            if (sunshineBalls[i].y >= sunshineBalls[i].destY) {
+                sunshineBalls[i].timer ++;
+                if (sunshineBalls[i].timer > 100) {
+                    sunshineBalls[i].isUsed = false;
+                }
+            }
+        }
+    }
+}
+
 void updateGame() {
     for (int i = 0; i < LAND_MAP_ROW; i ++) {
         for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
@@ -207,12 +271,15 @@ void updateGame() {
                 landMap[i][j].frameIndex ++;
                 int plantIndex = landMap[i][j].type - 1;
                 int frameIndex = landMap[i][j].frameIndex;
-                if (imgPlants[plantIndex][frameIndex] == nullptr) {
+                if (imgPlantsPics[plantIndex][frameIndex] == nullptr) {
                     landMap[i][j].frameIndex = 0;
                 }
             }
         }
     }
+
+    createSunshine();
+    updateSunshine();
 }
 
 void startMenuUI() {
@@ -290,13 +357,25 @@ bool fileExist(const char * filename) {
     return exist;
 }
 
+void loadSunshineBallPics(int size) {
+    char fname[64];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_SUNSHINE_PATH, "Sun_", i);
+        if (fileExist(fname)) {
+            loadimage(&imgSunshineBallPics[i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
 void loadSunflowerPics(int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_SUNFLOWER_PATH, "SunFLower_", i);
         if (fileExist(fname)) {
-            imgPlants[0][i] = new IMAGE;
-            loadimage(imgPlants[0][i], fname);
+            imgPlantsPics[0][i] = new IMAGE;
+            loadimage(imgPlantsPics[0][i], fname);
         } else {
             break;
         }
@@ -308,8 +387,8 @@ void loadPeashooterPics(int size) {
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_PEASHOOTER_PATH, "Peashooter_", i);
         if (fileExist(fname)) {
-            imgPlants[1][i] = new IMAGE;
-            loadimage(imgPlants[1][i], fname);
+            imgPlantsPics[1][i] = new IMAGE;
+            loadimage(imgPlantsPics[1][i], fname);
         } else {
             break;
         }
@@ -321,8 +400,8 @@ void loadPotatoMinePics(int size) {
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_POTATOMINE_PATH, "PotatoMine_", i);
         if (fileExist(fname)) {
-            imgPlants[2][i] = new IMAGE;
-            loadimage(imgPlants[2][i], fname);
+            imgPlantsPics[2][i] = new IMAGE;
+            loadimage(imgPlantsPics[2][i], fname);
         } else {
             break;
         }
@@ -334,8 +413,8 @@ void loadJalapenoPics(int size) {
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_JALAPENO_PATH, "Jalapeno_", i);
         if (fileExist(fname)) {
-            imgPlants[3][i] = new IMAGE;
-            loadimage(imgPlants[3][i], fname);
+            imgPlantsPics[3][i] = new IMAGE;
+            loadimage(imgPlantsPics[3][i], fname);
         } else {
             break;
         }
@@ -347,8 +426,8 @@ void loadChomperPics(int size) {
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_CHOMPER_PATH, "Chomper_", i);
         if (fileExist(fname)) {
-            imgPlants[4][i] = new IMAGE;
-            loadimage(imgPlants[4][i], fname);
+            imgPlantsPics[4][i] = new IMAGE;
+            loadimage(imgPlantsPics[4][i], fname);
         } else {
             break;
         }
@@ -360,8 +439,8 @@ void loadRepeatPeaShootPics(int size) {
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_REPEATERPEA_PATH, "RepeaterPea_", i);
         if (fileExist(fname)) {
-            imgPlants[5][i] = new IMAGE;
-            loadimage(imgPlants[5][i], fname);
+            imgPlantsPics[5][i] = new IMAGE;
+            loadimage(imgPlantsPics[5][i], fname);
         } else {
             break;
         }

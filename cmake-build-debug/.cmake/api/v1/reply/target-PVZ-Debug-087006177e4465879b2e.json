@@ -146,7 +146,8 @@
 			"sourceIndexes" : 
 			[
 				1,
-				2
+				2,
+				3
 			]
 		}
 	],
@@ -166,6 +167,11 @@
 		{
 			"backtrace" : 1,
 			"path" : "models/Land.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "models/SunshineBall.h",
 			"sourceGroupIndex" : 1
 		}
 	],
