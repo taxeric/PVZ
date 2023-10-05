@@ -40,6 +40,12 @@ using namespace std;
 #define LAND_MAP_SINGLE_WIDTH 80
 #define LAND_MAP_SINGLE_HEIGHT 100
 
+//阳光每次增加的数量
+#define SUNSHINE_AMOUNT 25
+//阳光总量文字起始坐标
+#define SUNSHINE_TEXT_START_X (270 - WIN_OFFSET)
+#define SUNSHINE_TEXT_START_Y 57
+
 //是否首次绘制
 bool isFirstDraw = true;
 //卡槽之间的间距总和
@@ -54,11 +60,15 @@ int curMovePlantPos;
 
 //土地
 struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
-//阳光
+//阳光池
 struct SunshineBall sunshineBalls[10];
 //阳光图片数
 const int max_sunshine_pics = 21;
 IMAGE imgSunshineBallPics[max_sunshine_pics];
+//阳光总数
+int gross_sunshine;
+//阳光pic宽高
+int sunshinePicWidth, sunshinePicHeight;
 
 IMAGE imgBg;
 IMAGE imgBar;
@@ -85,9 +95,16 @@ void gameInit() {
     loadimage(&imgBg, BASE_RES_BG_PATH);
     loadimage(&imgBar, BASE_RES_BAR_BG_PATH);
 
-    //加载阳光图片
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
+    //加载阳光图片
     loadSunshineBallPics(max_sunshine_pics);
+    //设置图片宽高
+    sunshinePicWidth = imgSunshineBallPics[0].getwidth();
+    sunshinePicHeight = imgSunshineBallPics[0].getheight();
+    if (sunshinePicWidth <= 0 || sunshinePicHeight <= 0) {
+        sunshinePicWidth = 80;
+        sunshinePicHeight = 80;
+    }
     //阳光随机数种子
     srand(time(nullptr));
 
@@ -114,8 +131,19 @@ void gameInit() {
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
     curMovePlantPos = 0;
+    gross_sunshine = 50;
 
     gross_card_slot_space_x = (PLANTS_COUNT - 1) * SPACE_BETWEEN_CARD;
+
+    LOGFONT f;
+    gettextstyle(&f);
+    f.lfHeight = 30;
+    f.lfWeight = 15;
+    strcpy(f.lfFaceName, "Segoe UI Black");
+    f.lfQuality = ANTIALIASED_QUALITY;
+    settextstyle(&f);
+    setbkmode(TRANSPARENT);
+    setcolor(BLACK);
 }
 
 void updateWindow() {
@@ -168,8 +196,29 @@ void updateWindow() {
         }
     }
 
+    char scoreText[8];
+    sprintf_s(scoreText, sizeof(scoreText), "%d", gross_sunshine);
+    outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
+
     //结束缓冲
     EndBatchDraw();
+}
+
+void collectSunshine(ExMessage* message) {
+    int count = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
+    for (int i = 0; i < count; i ++) {
+        if (sunshineBalls[i].isUsed) {
+            int x = sunshineBalls[i].x;
+            int y = sunshineBalls[i].y;
+            bool x_value = message->x > x && message->x < x + sunshinePicWidth;
+            bool y_value = message->y > y && message->y < y + sunshinePicHeight;
+            if (x_value && y_value) {
+                sunshineBalls[i].isUsed = false;
+                gross_sunshine += SUNSHINE_AMOUNT;
+//                cout << "sunshine amount = " << gross_sunshine << endl;
+            }
+        }
+    }
 }
 
 void userClickEvent() {
@@ -178,9 +227,9 @@ void userClickEvent() {
     if (peekmessage(&message)) {
         if (message.message == WM_LBUTTONDOWN) {
             //鼠标按下事件
-            //x范围
+            //植物卡槽x范围
             bool x_value = message.x > CARD_START_X && message.x < CARD_START_X + BASE_CARD_WIDTH * PLANTS_COUNT + gross_card_slot_space_x;
-            //y范围
+            //植物卡槽y范围
             bool y_value = message.y > CARD_START_Y && message.y < BASE_CARD_HEIGHT;
             if (x_value && y_value) {
                 for (int x_index = 0; x_index < PLANTS_COUNT; x_index ++) {
@@ -193,6 +242,9 @@ void userClickEvent() {
                         break;
                     }
                 }
+            } else {
+                //收集阳光
+                collectSunshine(&message);
             }
         } else if (message.message == WM_MOUSEMOVE && status == 1) {
             //鼠标移动事件
@@ -242,7 +294,7 @@ void createSunshine() {
         sunshineBalls[i].y = LAND_MAP_START_Y;
         sunshineBalls[i].destY = LAND_MAP_START_Y + (rand() % 4) * 90;
         sunshineBalls[i].timer = 0;
-        cout << "produce sunshine - " << i << " (" << sunshineBalls[i].x << "," << sunshineBalls[i].y << "," << sunshineBalls[i].destY << ")" << endl;
+//        cout << "produce gross_sunshine - " << i << " (" << sunshineBalls[i].x << "," << sunshineBalls[i].y << "," << sunshineBalls[i].destY << ")" << endl;
     }
 }
 
