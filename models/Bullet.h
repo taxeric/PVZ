@@ -15,6 +15,9 @@ struct Bullet {
     bool isUsed;
     //速度
     int speed;
+    //是否爆炸
+    bool explosion;
+    int frameIndex;
 };
 
 #endif //PVZ_BULLET_H

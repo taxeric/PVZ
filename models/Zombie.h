@@ -11,6 +11,7 @@ struct Zombie {
     int frameIndex;
     bool isUsed;
     int speed;
+    int hp;
 };
 
 #endif //PVZ_ZOMBIE_H

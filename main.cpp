@@ -93,7 +93,7 @@ struct Bullet bullets[30];
 //正常豌豆子弹
 IMAGE imgBulletNormal;
 //豌豆子弹碰撞后
-IMAGE imgBulletNormalExplode;
+IMAGE imgBulletNormalExplode[4];
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -151,7 +151,17 @@ void gameInit() {
     //加载子弹数据
     memset(bullets, 0, sizeof(bullets));
     loadimage(&imgBulletNormal, RES_PIC_BULLET_PEA_NORMAL);
-    loadimage(&imgBulletNormalExplode, RES_PIC_BULLET_PEA_NORMAL_EXPLODE);
+    loadimage(&imgBulletNormalExplode[3], RES_PIC_BULLET_PEA_NORMAL_EXPLODE);
+    for (int i = 0; i < 3; i ++) {
+        float scale = (i + 1) * 0.2;
+        loadimage(
+                &imgBulletNormalExplode[i],
+                RES_PIC_BULLET_PEA_NORMAL_EXPLODE,
+                imgBulletNormalExplode[3].getwidth() * scale,
+                imgBulletNormalExplode[3].getheight() * scale,
+                true
+                );
+    }
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -171,12 +181,63 @@ void gameInit() {
     setcolor(BLACK);
 }
 
+/**
+ * 绘制土地植物
+ */
+void drawPlants() {
+    for (int i = 0; i < LAND_MAP_ROW; i ++) {
+        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
+            if (landMap[i][j].type > 0) {
+                //获取当前选择的植物下标
+                int curPlantIndex = landMap[i][j].type - 1;
+                IMAGE* img = imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
+                int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
+                int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
+                putimage(x, y, imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
+            }
+        }
+    }
+}
+
+/**
+ * 绘制僵尸
+ */
 void drawZombies() {
     int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < zombieMax; i ++) {
         if (zombies[i].isUsed) {
             IMAGE* img = &imgZombiesPics[zombies[i].frameIndex];
             putimage(zombies[i].x, zombies[i].y - img->getheight(), img);
+        }
+    }
+}
+
+/**
+ * 绘制子弹
+ */
+void drawBullets() {
+    int bulletsMax = sizeof(bullets) / sizeof(bullets[0]);
+    for (int i = 0; i < bulletsMax; i ++) {
+        if (bullets[i].isUsed) {
+            if (bullets[i].explosion) {
+                IMAGE *img = &imgBulletNormalExplode[bullets[i].frameIndex];
+                putimage(bullets[i].x, bullets[i].y, img);
+            } else {
+                putimage(bullets[i].x, bullets[i].y, &imgBulletNormal);
+            }
+        }
+    }
+}
+
+/**
+ * 绘制阳光球
+ */
+void drawSunshineBalls() {
+    int sunshineBallMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
+    for (int i = 0; i < sunshineBallMax; i ++) {
+        if (sunshineBalls[i].isUsed || sunshineBalls[i].xOffset > 0) {
+            IMAGE* sunshineImg = &imgSunshineBallPics[sunshineBalls[i].frameIndex];
+            putimage(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
         }
     }
 }
@@ -189,6 +250,7 @@ void updateWindow() {
     putimage(CARD_SLOT_START_X, CARD_SLOT_START_Y, &imgBar);
     setbkcolor(TRANSPARENT);
 
+    //绘制卡槽
     int space_x = 0;
     for (int i = 0; i < PLANTS_COUNT; i ++) {
         long int x = CARD_START_X + i * BASE_CARD_WIDTH;
@@ -204,45 +266,20 @@ void updateWindow() {
         putimage(x, CARD_START_Y, &imgCardsPics[i]);
     }
 
-    //绘制土地植物
-    for (int i = 0; i < LAND_MAP_ROW; i ++) {
-        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
-            if (landMap[i][j].type > 0) {
-                //获取当前选择的植物下标
-                int curPlantIndex = landMap[i][j].type - 1;
-                IMAGE* img = imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
-                int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
-                int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
-                putimage(x, y, imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
-            }
-        }
-    }
-
+    //拖动绘制
     if (curMovePlantPos > 0) {
         IMAGE* img = imgPlantsPics[curMovePlantPos - 1][0];
         putimage(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
-    }
-
-    int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
-    for (int i = 0; i < ballMax; i ++) {
-        if (sunshineBalls[i].isUsed || sunshineBalls[i].xOffset > 0) {
-            IMAGE* sunshineImg = &imgSunshineBallPics[sunshineBalls[i].frameIndex];
-            putimage(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
-        }
-    }
-
-    int bulletsMax = sizeof(bullets) / sizeof(bullets[0]);
-    for (int i = 0; i < bulletsMax; i ++) {
-        if (bullets[i].isUsed) {
-            putimage(bullets[i].x, bullets[i].y, &imgBulletNormal);
-        }
     }
 
     char scoreText[8];
     sprintf_s(scoreText, sizeof(scoreText), "%d", gross_sunshine);
     outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
 
+    drawPlants();
     drawZombies();
+    drawSunshineBalls();
+    drawBullets();
 
     //结束缓冲
     EndBatchDraw();
@@ -400,6 +437,7 @@ void createZombies() {
             zombies[i].row = rand() % LAND_MAP_ROW;
             zombies[i].y = LAND_MAP_START_Y * 2 + (zombies[i].row) * LAND_MAP_SINGLE_HEIGHT;
             zombies[i].speed = 1;
+            zombies[i].hp = 100;
         }
     }
 }
@@ -463,6 +501,9 @@ void plantsShoot() {
                         bullets[k].row = i;
                         bullets[k].speed = 4;
 
+                        bullets[k].explosion = false;
+                        bullets[k].frameIndex = 0;
+
                         int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
                         int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
                         bullets[k].x = plantX + imgPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
@@ -481,6 +522,38 @@ void updateBullets() {
             bullets[i].x = bullets[i].x + bullets[i].speed;
             if (bullets[i].x > LAND_MAP_END_X) {
                 bullets[i].isUsed = false;
+            }
+            if (bullets[i].explosion) {
+                bullets[i].frameIndex ++;
+                if (bullets[i].frameIndex >= 4) {
+                    bullets[i].isUsed = false;
+                }
+            }
+        }
+    }
+}
+
+void collistionCheck() {
+    int bulletCount = sizeof(bullets) / sizeof(bullets[0]);
+    int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
+    for (int i = 0; i < bulletCount; i ++) {
+        if (!bullets[i].isUsed || bullets[i].explosion) {
+            continue;
+        }
+        for (int k = 0; k < zombieCount; k ++) {
+            if (!zombies[k].isUsed) {
+                continue;
+            }
+            int zombieX1 = zombies[k].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
+            int zombieX2 = zombies[k].x + 110;//僵尸图片实际需要碰撞的位置终点x, 因为图片尺寸需要手动加上偏移
+            int bulletX = bullets[i].x;
+            if (bulletX >= zombieX1 && bulletX <= zombieX2 && bullets[i].row == zombies[k].row) {
+                zombies[k].hp -= 20;//默认伤害
+                bullets[i].explosion = true;
+                bullets[i].speed = 0;
+                if (zombies[k].hp <= 0) {
+                    zombies[k].isUsed = false;
+                }
             }
         }
     }
@@ -508,6 +581,8 @@ void updateGame() {
 
     plantsShoot();
     updateBullets();
+
+    collistionCheck();
 }
 
 void startMenuUI() {
