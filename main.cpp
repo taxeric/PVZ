@@ -53,6 +53,8 @@ using namespace std;
 //阳光飞跃时每次移动的像素 越大越快
 #define SUNSHINE_FLY_PIXEL 10
 
+//僵尸攻击图片数量
+#define AMOUNT_ZOMBIE_ATTACK_PIC_1 20
 //僵尸死亡图片数量
 #define AMOUNT_ZOMBIE_DEAD_PIC_1 17
 #define AMOUNT_ZOMBIE_DEAD_PIC_2 9
@@ -91,6 +93,8 @@ IMAGE* imgPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
 struct Zombie zombies[10];
 //普通僵尸行走图片
 IMAGE imgZombiesPics[BASE_RES_PICS_AMOUNT];
+//普通僵尸攻击图片
+IMAGE imgZombiesAttackPics1[AMOUNT_ZOMBIE_ATTACK_PIC_1];
 //僵尸死亡图片
 IMAGE imgZombiesDeadPics1[AMOUNT_ZOMBIE_DEAD_PIC_1];
 IMAGE imgZombiesDeadPics2[AMOUNT_ZOMBIE_DEAD_PIC_2];
@@ -154,6 +158,7 @@ void gameInit() {
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
     loadNormalZombieWalkPics(21);
+    loadNormalZombieAttackPics(AMOUNT_ZOMBIE_ATTACK_PIC_1);
     loadNormalZombieDiePics(AMOUNT_ZOMBIE_DEAD_PIC_2);
 
     //加载子弹数据
@@ -214,13 +219,15 @@ void drawZombies() {
     int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < zombieMax; i ++) {
         if (zombies[i].isUsed) {
-//            IMAGE* img = &imgZombiesPics[zombies[i].frameIndex];
-//            IMAGE* img = (zombies[i].dead) ? &imgZombiesDeadPics2 : &imgZombiesPics;
             IMAGE* img;
             if (zombies[i].dead) {
                 img = imgZombiesDeadPics2;
             } else {
-                img = imgZombiesPics;
+                if (zombies[i].eating) {
+                    img = imgZombiesAttackPics1;
+                } else {
+                    img = imgZombiesPics;
+                }
             }
             img += zombies[i].frameIndex;
             putimage(zombies[i].x, zombies[i].y - img->getheight(), img);
@@ -367,6 +374,8 @@ void userClickEvent() {
                     if (landMap[row][column].type <= 0) {
                         landMap[row][column].type = curMovePlantPos;
                         landMap[row][column].frameIndex = 0;
+                        landMap[row][column].caught = false;
+                        landMap[row][column].deadTime = 10;
                         cout << "event: [up] (" << row << "," << column << ") plant index = " << landMap[row][column].type << endl;
                     }
                 }
@@ -447,6 +456,7 @@ void createZombies() {
         int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
         for (i = 0; i < zombieMax && zombies[i].isUsed; i ++);
         if (i < zombieMax) {
+            memset(&zombies[i], 0, sizeof(zombies[i]));
             zombies[i].isUsed = true;
             zombies[i].frameIndex = 0;
             zombies[i].x = WIN_WIDTH;
@@ -490,6 +500,8 @@ void updateZombies() {
                     if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_DEAD_PIC_2) {
                         zombies[i].isUsed = false;
                     }
+                } else if (zombies[i].eating) {
+                    zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
                 } else {
                     zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
                 }
@@ -559,7 +571,7 @@ void updateBullets() {
     }
 }
 
-void collisionCheck() {
+void checkBullet2Zombie() {
     int bulletCount = sizeof(bullets) / sizeof(bullets[0]);
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < bulletCount; i ++) {
@@ -589,6 +601,59 @@ void collisionCheck() {
             }
         }
     }
+}
+
+void checkZombie2Plant() {
+    int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
+    for (int i = 0; i < zombieCount; i ++) {
+        if (!zombies[i].dead) {
+            int row = zombies[i].row;
+            for (int column = 0; column < LAND_MAP_COLUMN; column++) {
+                if (landMap[row][column].type > 0) {
+                    //植物右侧像素值
+                    int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
+                    int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
+                    int zombieX = zombies[i].x + LAND_MAP_SINGLE_WIDTH;
+                    if (zombieX > plantX1 && zombieX < plantX2) {
+                        static int count = 0;
+                        count ++;
+                        if (landMap[row][column].caught) {
+                            if (count > 20) {
+                                count = 0;
+                                zombies[i].frameIndex++;
+                            }
+                            landMap[row][column].deadTime ++;
+                            if (landMap[row][column].deadTime > 100) {
+                                landMap[row][column].deadTime = 0;
+                                landMap[row][column].caught = false;
+                                landMap[row][column].type = 0;
+                                zombies[i].eating = false;
+                                zombies[i].speed = 1;
+                                zombies[i].frameIndex = 0;
+                            } else {
+                                if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_ATTACK_PIC_1) {
+                                    zombies[i].frameIndex = 0;
+                                }
+                            }
+                        } else {
+                            landMap[row][column].deadTime = 0;
+                            landMap[row][column].caught = true;
+                            zombies[i].eating = true;
+                            zombies[i].speed = 0;
+                            zombies[i].frameIndex = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void collisionCheck() {
+    //子弹碰撞僵尸
+    checkBullet2Zombie();
+    //僵尸攻击植物
+    checkZombie2Plant();
 }
 
 void updateGame() {
@@ -795,6 +860,16 @@ void loadNormalZombieWalkPics(int size) {
 }
 
 void loadNormalZombieAttackPics(int size) {
+    char fname[128];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_NORMAL_ZOMBIE_ATTACK_PATH, "ZombieAttack_", i);
+        cout << "file " << fname << endl;
+        if (fileExist(fname)) {
+            loadimage(&imgZombiesAttackPics1[i], fname);
+        } else {
+            break;
+        }
+    }
 }
 
 void loadNormalZombieDiePics(int size) {

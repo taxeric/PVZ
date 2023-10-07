@@ -11,6 +11,10 @@ struct Land{
     int type;
     //帧下标
     int frameIndex;
+    //植物是否被捕获
+    bool caught;
+    //植物死亡计数
+    int deadTime;
 };
 
 #endif //PVZ_LAND_H
