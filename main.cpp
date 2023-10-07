@@ -53,6 +53,10 @@ using namespace std;
 //阳光飞跃时每次移动的像素 越大越快
 #define SUNSHINE_FLY_PIXEL 10
 
+//僵尸死亡图片数量
+#define AMOUNT_ZOMBIE_DEAD_PIC_1 17
+#define AMOUNT_ZOMBIE_DEAD_PIC_2 9
+
 //是否首次绘制
 bool isFirstDraw = true;
 //卡槽之间的间距总和
@@ -85,8 +89,11 @@ IMAGE* imgPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
 
 //僵尸池
 struct Zombie zombies[10];
-//僵尸图片
+//普通僵尸行走图片
 IMAGE imgZombiesPics[BASE_RES_PICS_AMOUNT];
+//僵尸死亡图片
+IMAGE imgZombiesDeadPics1[AMOUNT_ZOMBIE_DEAD_PIC_1];
+IMAGE imgZombiesDeadPics2[AMOUNT_ZOMBIE_DEAD_PIC_2];
 
 //子弹池
 struct Bullet bullets[30];
@@ -147,6 +154,7 @@ void gameInit() {
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
     loadNormalZombieWalkPics(21);
+    loadNormalZombieDiePics(AMOUNT_ZOMBIE_DEAD_PIC_2);
 
     //加载子弹数据
     memset(bullets, 0, sizeof(bullets));
@@ -206,7 +214,15 @@ void drawZombies() {
     int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < zombieMax; i ++) {
         if (zombies[i].isUsed) {
-            IMAGE* img = &imgZombiesPics[zombies[i].frameIndex];
+//            IMAGE* img = &imgZombiesPics[zombies[i].frameIndex];
+//            IMAGE* img = (zombies[i].dead) ? &imgZombiesDeadPics2 : &imgZombiesPics;
+            IMAGE* img;
+            if (zombies[i].dead) {
+                img = imgZombiesDeadPics2;
+            } else {
+                img = imgZombiesPics;
+            }
+            img += zombies[i].frameIndex;
             putimage(zombies[i].x, zombies[i].y - img->getheight(), img);
         }
     }
@@ -438,6 +454,9 @@ void createZombies() {
             zombies[i].y = LAND_MAP_START_Y * 2 + (zombies[i].row) * LAND_MAP_SINGLE_HEIGHT;
             zombies[i].speed = 1;
             zombies[i].hp = 100;
+            zombies[i].head = false;
+            zombies[i].lostHead = false;
+            zombies[i].dead = false;
         }
     }
 }
@@ -466,7 +485,14 @@ void updateZombies() {
         zombieActionCount = 0;
         for (int i = 0; i < zombieMax; i ++) {
             if (zombies[i].isUsed) {
-                zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
+                if (zombies[i].dead) {
+                    zombies[i].frameIndex ++;
+                    if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_DEAD_PIC_2) {
+                        zombies[i].isUsed = false;
+                    }
+                } else {
+                    zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
+                }
             }
         }
     }
@@ -491,7 +517,7 @@ void plantsShoot() {
             if (landMap[i][j].type - 1 == PEASHOOT && lines[i]) {
                 static int count = 0;
                 count ++;
-                if (count > 80) {
+                if (count > 40) {//越大子弹速度越慢
                     count = 0;
                     int k;
                     //找到可用的子弹
@@ -533,7 +559,7 @@ void updateBullets() {
     }
 }
 
-void collistionCheck() {
+void collisionCheck() {
     int bulletCount = sizeof(bullets) / sizeof(bullets[0]);
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < bulletCount; i ++) {
@@ -547,13 +573,19 @@ void collistionCheck() {
             int zombieX1 = zombies[k].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
             int zombieX2 = zombies[k].x + 110;//僵尸图片实际需要碰撞的位置终点x, 因为图片尺寸需要手动加上偏移
             int bulletX = bullets[i].x;
-            if (bulletX >= zombieX1 && bulletX <= zombieX2 && bullets[i].row == zombies[k].row) {
+            if (!zombies[k].dead && bulletX >= zombieX1 && bulletX <= zombieX2 && bullets[i].row == zombies[k].row) {
                 zombies[k].hp -= 20;//默认伤害
                 bullets[i].explosion = true;
                 bullets[i].speed = 0;
-                if (zombies[k].hp <= 0) {
-                    zombies[k].isUsed = false;
+                if (zombies[k].hp <= 40 && zombies[k].hp > 0) {
+                    zombies[k].lostHead = true;
+                } else if (zombies[k].hp <= 0) {
+                    zombies[k].dead = true;
+                    zombies[k].speed = 0;
+                    zombies[k].frameIndex = 0;
+//                    zombies[k].isUsed = false;
                 }
+                break;
             }
         }
     }
@@ -582,7 +614,7 @@ void updateGame() {
     plantsShoot();
     updateBullets();
 
-    collistionCheck();
+    collisionCheck();
 }
 
 void startMenuUI() {
@@ -763,6 +795,18 @@ void loadNormalZombieWalkPics(int size) {
 }
 
 void loadNormalZombieAttackPics(int size) {
+}
+
+void loadNormalZombieDiePics(int size) {
+    char fname[64];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_NORMAL_ZOMBIE_DIE_PATH, "ZombieDie_", i);
+        if (fileExist(fname)) {
+            loadimage(&imgZombiesDeadPics2[i], fname);
+        } else {
+            break;
+        }
+    }
 }
 
 void loadZombieBoomDiePics(int size) {

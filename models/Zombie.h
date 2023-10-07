@@ -12,6 +12,9 @@ struct Zombie {
     bool isUsed;
     int speed;
     int hp;
+    bool head;
+    bool lostHead;
+    bool dead;
 };
 
 #endif //PVZ_ZOMBIE_H
