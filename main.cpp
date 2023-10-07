@@ -338,7 +338,7 @@ void updateSunshine() {
 }
 
 void createZombies() {
-    static int zombieFre = 500;
+    static int zombieFre = 100;
     static int count = 0;
     count ++;
     if (count > zombieFre) {
@@ -358,15 +358,30 @@ void createZombies() {
 }
 
 void updateZombies() {
+    static int count = 0;
+    count ++;
+    if (count > 50) {
+        count = 0;
+    }
     int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < zombieMax; i ++) {
         if (zombies[i].isUsed) {
             zombies[i].x -= zombies[i].speed;
-            zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
             if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
                 //game over ~~~
                 cout << "game over ~~~" << endl;
                 exit(0);
+            }
+        }
+    }
+
+    static int zombieActionCount = 0;
+    zombieActionCount ++;
+    if (zombieActionCount > 4) {
+        zombieActionCount = 0;
+        for (int i = 0; i < zombieMax; i ++) {
+            if (zombies[i].isUsed) {
+                zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
             }
         }
     }
