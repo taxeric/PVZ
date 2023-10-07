@@ -6,11 +6,34 @@
 #define PVZ_M_LOCAL_RESOURCES_H
 
 enum {
+    /**
+     * 向日葵
+     */
     SUNFLOWER,
+
+    /**
+     * 豌豆射手
+     */
     PEASHOOT,
+
+    /**
+     * 土豆地雷
+     */
     POTATOMINE,
+
+    /**
+     * 火爆辣椒
+     */
     JALAPENO,
+
+    /**
+     * 食人花
+     */
     CHOMPER,
+
+    /**
+     * 双发射手
+     */
     REPEATERPEA,
     PLANTS_COUNT,
 };
@@ -70,6 +93,11 @@ enum {
 #define RES_PIC_NORMAL_ZOMBIE_DIE_PATH "../res/graphics/Zombies/NormalZombie/ZombieDie/"
 //普通僵尸因爆炸死亡图片路径
 #define RES_PIC_NORMAL_ZOMBIE_BOOM_DIE_PATH "../res/graphics/Zombies/NormalZombie/BoomDie/"
+
+//正常豌豆子弹图片
+#define RES_PIC_BULLET_PEA_NORMAL "../res/graphics/Bullets/PeaNormal/PeaNormal_0.png"
+//碰撞僵尸后的豌豆子弹图片
+#define RES_PIC_BULLET_PEA_NORMAL_EXPLODE "../res/graphics/Bullets/PeaNormalExplode/PeaNormalExplode_0.png"
 
 void loadSunshineBallPics(int size);
 

@@ -12,4 +12,5 @@ add_executable(PVZ main.cpp
         m_local_resources.h
         models/Land.h
         models/SunshineBall.h
-        models/Zombie.h)
+        models/Zombie.h
+        models/Bullet.h)

@@ -7,6 +7,7 @@
 
 struct Zombie {
     int x, y;
+    int row;
     int frameIndex;
     bool isUsed;
     int speed;

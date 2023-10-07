@@ -8,6 +8,7 @@
 #include "models/Land.h"
 #include "models/SunshineBall.h"
 #include "models/Zombie.h"
+#include "models/Bullet.h"
 
 using namespace std;
 
@@ -87,6 +88,13 @@ struct Zombie zombies[10];
 //僵尸图片
 IMAGE imgZombiesPics[BASE_RES_PICS_AMOUNT];
 
+//子弹池
+struct Bullet bullets[30];
+//正常豌豆子弹
+IMAGE imgBulletNormal;
+//豌豆子弹碰撞后
+IMAGE imgBulletNormalExplode;
+
 int getDelay() {
     static unsigned long long lastTime = 0;
     unsigned long long curTime = GetTickCount();
@@ -139,6 +147,11 @@ void gameInit() {
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
     loadNormalZombieWalkPics(21);
+
+    //加载子弹数据
+    memset(bullets, 0, sizeof(bullets));
+    loadimage(&imgBulletNormal, RES_PIC_BULLET_PEA_NORMAL);
+    loadimage(&imgBulletNormalExplode, RES_PIC_BULLET_PEA_NORMAL_EXPLODE);
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -215,6 +228,13 @@ void updateWindow() {
         if (sunshineBalls[i].isUsed || sunshineBalls[i].xOffset > 0) {
             IMAGE* sunshineImg = &imgSunshineBallPics[sunshineBalls[i].frameIndex];
             putimage(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
+        }
+    }
+
+    int bulletsMax = sizeof(bullets) / sizeof(bullets[0]);
+    for (int i = 0; i < bulletsMax; i ++) {
+        if (bullets[i].isUsed) {
+            putimage(bullets[i].x, bullets[i].y, &imgBulletNormal);
         }
     }
 
@@ -351,7 +371,6 @@ void updateSunshine() {
             float angle = atan(((float) sunshineBalls[i].y - destY) / ((float) sunshineBalls[i].x - destX));
             sunshineBalls[i].xOffset = SUNSHINE_FLY_PIXEL * cos(angle);
             sunshineBalls[i].yOffset = SUNSHINE_FLY_PIXEL * sin(angle);
-            cout << sunshineBalls[i].y << "  " << sunshineBalls[i].y << "  " << sunshineBalls[i].xOffset << "  " << sunshineBalls[i].yOffset << endl;
 
             sunshineBalls[i].x -= sunshineBalls[i].xOffset;
             sunshineBalls[i].y -= sunshineBalls[i].yOffset;
@@ -378,7 +397,8 @@ void createZombies() {
             zombies[i].isUsed = true;
             zombies[i].frameIndex = 0;
             zombies[i].x = WIN_WIDTH;
-            zombies[i].y = LAND_MAP_START_Y * 2 + (rand() % 3 + 1) * LAND_MAP_SINGLE_HEIGHT;
+            zombies[i].row = rand() % LAND_MAP_ROW;
+            zombies[i].y = LAND_MAP_START_Y * 2 + (zombies[i].row) * LAND_MAP_SINGLE_HEIGHT;
             zombies[i].speed = 1;
         }
     }
@@ -414,6 +434,58 @@ void updateZombies() {
     }
 }
 
+void plantsShoot() {
+    int lines[LAND_MAP_ROW] = {0};
+    int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
+    int dangerX = LAND_MAP_END_X/* - imgZombiesPics[0].getwidth()*/;
+    int bulletMax = sizeof(bullets) / sizeof(bullets[0]);
+    for (int i = 0; i < zombieCount; i ++) {
+        if (zombies[i].isUsed && zombies[i].x < dangerX) {
+            lines[zombies[i].row] = 1;
+        }
+    }
+
+    for (int i = 0; i < LAND_MAP_ROW; i ++) {
+        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
+            if (landMap[i][j].type == 0) {
+                continue;
+            }
+            if (landMap[i][j].type - 1 == PEASHOOT && lines[i]) {
+                static int count = 0;
+                count ++;
+                if (count > 80) {
+                    count = 0;
+                    int k;
+                    //找到可用的子弹
+                    for (k = 0; k < bulletMax && bullets[k].isUsed; k ++);
+                    if (k < bulletMax) {
+                        bullets[k].isUsed = true;
+                        bullets[k].row = i;
+                        bullets[k].speed = 4;
+
+                        int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
+                        int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
+                        bullets[k].x = plantX + imgPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
+                        bullets[k].y = plantY + 5;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void updateBullets() {
+    int countMax = sizeof(bullets) / sizeof(bullets[0]);
+    for (int i = 0; i < countMax; i ++) {
+        if (bullets[i].isUsed) {
+            bullets[i].x = bullets[i].x + bullets[i].speed;
+            if (bullets[i].x > LAND_MAP_END_X) {
+                bullets[i].isUsed = false;
+            }
+        }
+    }
+}
+
 void updateGame() {
     for (int i = 0; i < LAND_MAP_ROW; i ++) {
         for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
@@ -433,6 +505,9 @@ void updateGame() {
 
     createZombies();
     updateZombies();
+
+    plantsShoot();
+    updateBullets();
 }
 
 void startMenuUI() {
