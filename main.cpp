@@ -3,6 +3,7 @@
 #include <conio.h>
 #include <cstdio>
 #include <ctime>
+#include <cmath>
 #include "m_local_resources.h"
 #include "models/Land.h"
 #include "models/SunshineBall.h"
@@ -48,6 +49,8 @@ using namespace std;
 //阳光总量文字起始坐标
 #define SUNSHINE_TEXT_START_X (270 - WIN_OFFSET)
 #define SUNSHINE_TEXT_START_Y 57
+//阳光飞跃时每次移动的像素 越大越快
+#define SUNSHINE_FLY_PIXEL 10
 
 //是否首次绘制
 bool isFirstDraw = true;
@@ -209,7 +212,7 @@ void updateWindow() {
 
     int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < ballMax; i ++) {
-        if (sunshineBalls[i].isUsed) {
+        if (sunshineBalls[i].isUsed || sunshineBalls[i].xOffset > 0) {
             IMAGE* sunshineImg = &imgSunshineBallPics[sunshineBalls[i].frameIndex];
             putimage(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
         }
@@ -237,6 +240,12 @@ void collectSunshine(ExMessage* message) {
                 sunshineBalls[i].isUsed = false;
                 gross_sunshine += SUNSHINE_AMOUNT;
 //                cout << "sunshine amount = " << gross_sunshine << endl;
+                //设置偏移
+                float destX = CARD_SLOT_START_X;
+                float destY = CARD_SLOT_START_Y;
+                float angle = atan(((float)y - destY) / ((float)x - destX));
+                sunshineBalls[i].xOffset = SUNSHINE_FLY_PIXEL * cos(angle);
+                sunshineBalls[i].yOffset = SUNSHINE_FLY_PIXEL * sin(angle);
             }
         }
     }
@@ -297,7 +306,7 @@ void userClickEvent() {
 
 void createSunshine() {
     static int count = 0;
-    static int fre = 400;
+    static int fre = 40;
     count ++;
     if (count >= fre) {
         fre = 200 + rand() % 20;
@@ -315,6 +324,8 @@ void createSunshine() {
         sunshineBalls[i].y = LAND_MAP_START_Y;
         sunshineBalls[i].destY = LAND_MAP_START_Y + (rand() % 4) * 90;
         sunshineBalls[i].timer = 0;
+        sunshineBalls[i].xOffset = 0;
+        sunshineBalls[i].yOffset = 0;
 //        cout << "produce gross_sunshine - " << i << " (" << sunshineBalls[i].x << "," << sunshineBalls[i].y << "," << sunshineBalls[i].destY << ")" << endl;
     }
 }
@@ -332,6 +343,22 @@ void updateSunshine() {
                 if (sunshineBalls[i].timer > 100) {
                     sunshineBalls[i].isUsed = false;
                 }
+            }
+        } else if (sunshineBalls[i].xOffset > 0) {
+            //设置偏移
+            float destX = CARD_SLOT_START_X;
+            float destY = CARD_SLOT_START_Y;
+            float angle = atan(((float) sunshineBalls[i].y - destY) / ((float) sunshineBalls[i].x - destX));
+            sunshineBalls[i].xOffset = SUNSHINE_FLY_PIXEL * cos(angle);
+            sunshineBalls[i].yOffset = SUNSHINE_FLY_PIXEL * sin(angle);
+            cout << sunshineBalls[i].y << "  " << sunshineBalls[i].y << "  " << sunshineBalls[i].xOffset << "  " << sunshineBalls[i].yOffset << endl;
+
+            sunshineBalls[i].x -= sunshineBalls[i].xOffset;
+            sunshineBalls[i].y -= sunshineBalls[i].yOffset;
+            if (sunshineBalls[i].x <= CARD_SLOT_START_X || sunshineBalls[i].y <= CARD_SLOT_START_Y) {
+                sunshineBalls[i].xOffset = 0;
+                sunshineBalls[i].yOffset = 0;
+//                gross_sunshine += SUNSHINE_AMOUNT;
             }
         }
     }

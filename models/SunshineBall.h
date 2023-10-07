@@ -19,6 +19,9 @@ struct SunshineBall {
     bool isUsed;
     //
     int timer;
+
+    //飞跃的xy
+    float xOffset, yOffset;
 };
 
 #endif //PVZ_SUNSHINEBALL_H
