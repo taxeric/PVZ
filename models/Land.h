@@ -15,6 +15,11 @@ struct Land{
     bool caught;
     //植物死亡计数
     int deadTime;
+
+    //block定时器
+    int timer;
+    //block坐标
+    int x, y;
 };
 
 #endif //PVZ_LAND_H

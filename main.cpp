@@ -311,13 +311,16 @@ void updateWindow() {
 void collectSunshine(ExMessage* message) {
     int count = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < count; i ++) {
-        if (sunshineBalls[i].isUsed) {
-            int x = sunshineBalls[i].x;
-            int y = sunshineBalls[i].y;
+        struct SunshineBall* sunshineBall = &sunshineBalls[i];
+        if (sunshineBall->isUsed) {
+            int x = sunshineBall->x;
+            int y = sunshineBall->y;
             bool x_value = message->x > x && message->x < x + sunshinePicWidth;
             bool y_value = message->y > y && message->y < y + sunshinePicHeight;
             if (x_value && y_value) {
-                sunshineBalls[i].isUsed = false;
+                sunshineBall->isUsed = false;
+                sunshineBall->status = SUNSHINE_COLLECT;
+                sunshineBall->speed = 1.0;
                 gross_sunshine += SUNSHINE_AMOUNT;
 //                cout << "sunshine amount = " << gross_sunshine << endl;
                 //设置偏移
@@ -326,6 +329,7 @@ void collectSunshine(ExMessage* message) {
                 float angle = atan(((float)y - destY) / ((float)x - destX));
                 sunshineBalls[i].xOffset = SUNSHINE_FLY_PIXEL * cos(angle);
                 sunshineBalls[i].yOffset = SUNSHINE_FLY_PIXEL * sin(angle);
+                break;
             }
         }
     }
@@ -376,6 +380,8 @@ void userClickEvent() {
                         landMap[row][column].frameIndex = 0;
                         landMap[row][column].caught = false;
                         landMap[row][column].deadTime = 10;
+                        landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
+                        landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
                         cout << "event: [up] (" << row << "," << column << ") plant index = " << landMap[row][column].type << endl;
                     }
                 }
@@ -399,16 +405,44 @@ void createSunshine() {
         if (i >= ballMax) {
             return;
         }
-        sunshineBalls[i].isUsed = true;
-        sunshineBalls[i].frameIndex = 0;
-        sunshineBalls[i].x = LAND_MAP_START_X + rand() % (LAND_MAP_END_X - LAND_MAP_START_X);
+        struct SunshineBall* sunshineBall = &sunshineBalls[i];
+        sunshineBall->isUsed = true;
+        sunshineBall->frameIndex = 0;
+        sunshineBall->x = LAND_MAP_START_X + rand() % (LAND_MAP_END_X - LAND_MAP_START_X);
 //    sunshineBalls[i].y = LAND_MAP_START_Y + rand() % (LAND_MAP_END_Y - LAND_MAP_START_Y);
-        sunshineBalls[i].y = LAND_MAP_START_Y;
-        sunshineBalls[i].destY = LAND_MAP_START_Y + (rand() % 4) * 90;
-        sunshineBalls[i].timer = 0;
-        sunshineBalls[i].xOffset = 0;
-        sunshineBalls[i].yOffset = 0;
+        sunshineBall->y = LAND_MAP_START_Y;
+        sunshineBall->destY = LAND_MAP_START_Y + (rand() % 4) * 90;
+        sunshineBall->timer = 0;
+        sunshineBall->xOffset = 0;
+        sunshineBall->yOffset = 0;
+        sunshineBall->status = SUNSHINE_DOWN;
 //        cout << "produce gross_sunshine - " << i << " (" << sunshineBalls[i].x << "," << sunshineBalls[i].y << "," << sunshineBalls[i].destY << ")" << endl;
+    }
+
+    int sunshineBallMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
+    for (int row = 0; row < LAND_MAP_ROW; row ++) {
+        for (int column = 0; column < LAND_MAP_COLUMN; column ++) {
+            if (landMap[row][column].type - 1 == SUNFLOWER) {
+                landMap[row][column].timer ++;
+                if (landMap[row][column].timer > 200) {
+                    landMap[row][column].timer = 0;
+                    int k;
+                    for (k = 0; k < sunshineBallMax && sunshineBalls[k].isUsed; k ++);
+                    if (k >= sunshineBallMax) {
+                        return;
+                    }
+                    IMAGE* sunflowerImg = imgPlantsPics[SUNFLOWER][0];
+                    struct SunshineBall* sunshineBall = &sunshineBalls[k];
+                    sunshineBall->isUsed = true;
+                    sunshineBall->x = landMap[row][column].x;
+                    sunshineBall->y = landMap[row][column].y;
+                    sunshineBall->destX = landMap[row][column].x + sunflowerImg->getwidth() / 2;
+                    sunshineBall->destY = landMap[row][column].y + imgSunshineBallPics[0].getheight() / 2;
+                    sunshineBall->status = SUNSHINE_PRODUCT;
+                    sunshineBall->speed = 0.05;
+                }
+            }
+        }
     }
 }
 
@@ -416,14 +450,32 @@ void updateSunshine() {
     int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < ballMax; i ++) {
         if (sunshineBalls[i].isUsed) {
-            sunshineBalls[i].frameIndex = (sunshineBalls[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
-            if (sunshineBalls[i].timer == 0) {
-                sunshineBalls[i].y += 2;
-            }
-            if (sunshineBalls[i].y >= sunshineBalls[i].destY) {
-                sunshineBalls[i].timer ++;
-                if (sunshineBalls[i].timer > 100) {
-                    sunshineBalls[i].isUsed = false;
+            struct SunshineBall* sunshineBall = &sunshineBalls[i];
+            sunshineBall->frameIndex = (sunshineBalls[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
+            int status = sunshineBall->status;
+            if (status == SUNSHINE_DOWN) {
+                if (sunshineBall->y >= sunshineBall->destY) {
+                    sunshineBall->timer = 0;
+                    sunshineBall->status = SUNSHINE_GROUND;
+                } else {
+                    sunshineBall->y += 2;
+                }
+            } else if (status == SUNSHINE_PRODUCT) {
+                if (sunshineBall->x >= sunshineBall->destX) {
+                    if (sunshineBall->y >= sunshineBall->destY) {
+                        sunshineBall->timer = 0;
+                        sunshineBall->status = SUNSHINE_GROUND;
+                    } else {
+                        sunshineBall->y += 2;
+                    }
+                } else {
+                    sunshineBall->x ++;
+                }
+            } else if (status == SUNSHINE_GROUND) {
+                sunshineBall->timer ++;
+                if (sunshineBall->timer > 100) {
+                    sunshineBall->isUsed = false;
+                    sunshineBall->timer = 0;
                 }
             }
         } else if (sunshineBalls[i].xOffset > 0) {
@@ -456,17 +508,18 @@ void createZombies() {
         int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
         for (i = 0; i < zombieMax && zombies[i].isUsed; i ++);
         if (i < zombieMax) {
+            struct Zombie* zombie = &zombies[i];
             memset(&zombies[i], 0, sizeof(zombies[i]));
-            zombies[i].isUsed = true;
-            zombies[i].frameIndex = 0;
-            zombies[i].x = WIN_WIDTH;
-            zombies[i].row = rand() % LAND_MAP_ROW;
-            zombies[i].y = LAND_MAP_START_Y * 2 + (zombies[i].row) * LAND_MAP_SINGLE_HEIGHT;
-            zombies[i].speed = 1;
-            zombies[i].hp = 100;
-            zombies[i].head = false;
-            zombies[i].lostHead = false;
-            zombies[i].dead = false;
+            zombie->isUsed = true;
+            zombie->frameIndex = 0;
+            zombie->x = WIN_WIDTH;
+            zombie->row = rand() % LAND_MAP_ROW;
+            zombie->y = LAND_MAP_START_Y * 2 + (zombie->row) * LAND_MAP_SINGLE_HEIGHT;
+            zombie->speed = 1;
+            zombie->hp = 100;
+            zombie->head = false;
+            zombie->lostHead = false;
+            zombie->dead = false;
         }
     }
 }
@@ -618,9 +671,9 @@ void checkZombie2Plant() {
                         static int count = 0;
                         count ++;
                         if (landMap[row][column].caught) {
-                            if (count > 20) {
+                            if (count > 20) {//越大切换图片越慢
                                 count = 0;
-                                zombies[i].frameIndex++;
+                                zombies[i].frameIndex ++;
                             }
                             landMap[row][column].deadTime ++;
                             if (landMap[row][column].deadTime > 100) {
@@ -657,14 +710,19 @@ void collisionCheck() {
 }
 
 void updateGame() {
-    for (int i = 0; i < LAND_MAP_ROW; i ++) {
-        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
-            if (landMap[i][j].type > 0) {
-                landMap[i][j].frameIndex ++;
-                int plantIndex = landMap[i][j].type - 1;
-                int frameIndex = landMap[i][j].frameIndex;
-                if (imgPlantsPics[plantIndex][frameIndex] == nullptr) {
-                    landMap[i][j].frameIndex = 0;
+    static int count = 0;
+    count ++;
+    if (count > 1) {
+        count = 0;
+        for (int i = 0; i < LAND_MAP_ROW; i++) {
+            for (int j = 0; j < LAND_MAP_COLUMN; j++) {
+                if (landMap[i][j].type > 0) {
+                    landMap[i][j].frameIndex++;
+                    int plantIndex = landMap[i][j].type - 1;
+                    int frameIndex = landMap[i][j].frameIndex;
+                    if (imgPlantsPics[plantIndex][frameIndex] == nullptr) {
+                        landMap[i][j].frameIndex = 0;
+                    }
                 }
             }
         }
@@ -863,7 +921,6 @@ void loadNormalZombieAttackPics(int size) {
     char fname[128];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_NORMAL_ZOMBIE_ATTACK_PATH, "ZombieAttack_", i);
-        cout << "file " << fname << endl;
         if (fileExist(fname)) {
             loadimage(&imgZombiesAttackPics1[i], fname);
         } else {

@@ -38,6 +38,29 @@ enum {
     PLANTS_COUNT,
 };
 
+enum {
+
+    /**
+     * 下落
+     */
+    SUNSHINE_DOWN,
+
+    /**
+     * 落到地上
+     */
+    SUNSHINE_GROUND,
+
+    /**
+     * 收集
+     */
+    SUNSHINE_COLLECT,
+
+    /**
+     * 向日葵生成
+     */
+    SUNSHINE_PRODUCT
+};
+
 #define BASE_RES_PATH "../res/graphics/"
 
 #define BASE_RES_START_MENU_PATH "../res/graphics/Screen/MainMenu.png"
