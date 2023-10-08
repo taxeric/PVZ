@@ -558,7 +558,12 @@ void updateZombies() {
         count = 0;
         for (int i = 0; i < zombieMax; i ++) {
             if (zombies[i].isUsed) {
-                zombies[i].x -= zombies[i].speed;
+                if (!zombies[i].eating) {
+                    if ((zombies[i].frameIndex > 0 && zombies[i].frameIndex < 14) ||
+                        (zombies[i].frameIndex > 16 && zombies[i].frameIndex < BASE_RES_PICS_AMOUNT - 2)) {
+                        zombies[i].x -= zombies[i].speed;
+                    }
+                }
                 if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
                     //game over ~~~
                     cout << "game over ~~~" << endl;
