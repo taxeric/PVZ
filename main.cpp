@@ -392,9 +392,29 @@ void userClickEvent() {
     }
 }
 
+void updatePlants() {
+    static int count = 0;
+    count ++;
+    if (count > 3) {
+        count = 0;
+        for (int i = 0; i < LAND_MAP_ROW; i++) {
+            for (int j = 0; j < LAND_MAP_COLUMN; j++) {
+                if (landMap[i][j].type > 0) {
+                    landMap[i][j].frameIndex++;
+                    int plantIndex = landMap[i][j].type - 1;
+                    int frameIndex = landMap[i][j].frameIndex;
+                    if (imgPlantsPics[plantIndex][frameIndex] == nullptr) {
+                        landMap[i][j].frameIndex = 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void createSunshine() {
     static int count = 0;
-    static int fre = 40;
+    static int fre = 80;
     count ++;
     if (count >= fre) {
         fre = 200 + rand() % 20;
@@ -498,7 +518,7 @@ void updateSunshine() {
 }
 
 void createZombies() {
-    static int zombieFre = 100;
+    static int zombieFre = 400;//僵尸生成间隔
     static int count = 0;
     count ++;
     if (count > zombieFre) {
@@ -525,26 +545,26 @@ void createZombies() {
 }
 
 void updateZombies() {
+    int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
     static int count = 0;
     count ++;
-    if (count > 50) {
+    if (count > 4) {
         count = 0;
-    }
-    int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
-    for (int i = 0; i < zombieMax; i ++) {
-        if (zombies[i].isUsed) {
-            zombies[i].x -= zombies[i].speed;
-            if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
-                //game over ~~~
-                cout << "game over ~~~" << endl;
-                exit(0);
+        for (int i = 0; i < zombieMax; i ++) {
+            if (zombies[i].isUsed) {
+                zombies[i].x -= zombies[i].speed;
+                if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
+                    //game over ~~~
+                    cout << "game over ~~~" << endl;
+                    exit(0);
+                }
             }
         }
     }
 
     static int zombieActionCount = 0;
     zombieActionCount ++;
-    if (zombieActionCount > 4) {
+    if (zombieActionCount > 4 * 2) {
         zombieActionCount = 0;
         for (int i = 0; i < zombieMax; i ++) {
             if (zombies[i].isUsed) {
@@ -566,7 +586,7 @@ void updateZombies() {
 void plantsShoot() {
     int lines[LAND_MAP_ROW] = {0};
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
-    int dangerX = LAND_MAP_END_X/* - imgZombiesPics[0].getwidth()*/;
+    int dangerX = LAND_MAP_END_X - 80/* - imgZombiesPics[0].getwidth()*/;//手动减去僵尸png前方的占位透明像素
     int bulletMax = sizeof(bullets) / sizeof(bullets[0]);
     for (int i = 0; i < zombieCount; i ++) {
         if (zombies[i].isUsed && zombies[i].x < dangerX) {
@@ -582,7 +602,7 @@ void plantsShoot() {
             if (landMap[i][j].type - 1 == PEASHOOT && lines[i]) {
                 static int count = 0;
                 count ++;
-                if (count > 40) {//越大子弹速度越慢
+                if (count > 120) {//越大子弹间隔越大
                     count = 0;
                     int k;
                     //找到可用的子弹
@@ -710,23 +730,8 @@ void collisionCheck() {
 }
 
 void updateGame() {
-    static int count = 0;
-    count ++;
-    if (count > 1) {
-        count = 0;
-        for (int i = 0; i < LAND_MAP_ROW; i++) {
-            for (int j = 0; j < LAND_MAP_COLUMN; j++) {
-                if (landMap[i][j].type > 0) {
-                    landMap[i][j].frameIndex++;
-                    int plantIndex = landMap[i][j].type - 1;
-                    int frameIndex = landMap[i][j].frameIndex;
-                    if (imgPlantsPics[plantIndex][frameIndex] == nullptr) {
-                        landMap[i][j].frameIndex = 0;
-                    }
-                }
-            }
-        }
-    }
+
+    updatePlants();
 
     createSunshine();
     updateSunshine();
@@ -787,7 +792,7 @@ int main() {
         userClickEvent();
         timer += getDelay();
 
-        if (timer > 30) {
+        if (timer > 10) {
             refreshFlag = true;
             timer = 0;
         }
