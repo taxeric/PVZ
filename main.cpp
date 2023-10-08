@@ -10,6 +10,7 @@
 #include "models/SunshineBall.h"
 #include "models/Zombie.h"
 #include "models/Bullet.h"
+#include "models/GameStatus.h"
 
 using namespace std;
 
@@ -61,6 +62,12 @@ using namespace std;
 //僵尸死亡图片数量
 #define AMOUNT_ZOMBIE_DEAD_PIC_1 17
 #define AMOUNT_ZOMBIE_DEAD_PIC_2 9
+
+//当前关卡
+int game_level;
+int game_level_index;
+//游戏状态
+struct GameStatus gameStatus[5];
 
 //是否首次绘制
 bool isFirstDraw = true;
@@ -126,6 +133,12 @@ int getDelay() {
 void gameInit() {
     loadimage(&imgBg, BASE_RES_BG_PATH);
     loadimage(&imgBar, BASE_RES_BAR_BG_PATH);
+
+    game_level = 0;
+    gameStatus[game_level].levelStatus = GameIdle;
+    gameStatus[game_level].level = game_level + 1;
+    gameStatus[game_level].killCount = 0;
+    gameStatus[game_level].zombieMaxCount = 10;
 
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
     //加载阳光图片
@@ -524,6 +537,10 @@ void updateSunshine() {
 }
 
 void createZombies() {
+    if (gameStatus[game_level].zombieCount >= gameStatus[game_level].zombieMaxCount) {
+        return;
+    }
+
     static int zombieFre = 400;//僵尸生成间隔
     static int count = 0;
     count ++;
@@ -546,6 +563,7 @@ void createZombies() {
             zombie->head = false;
             zombie->lostHead = false;
             zombie->dead = false;
+            gameStatus[game_level].zombieCount ++;
         }
     }
 }
@@ -567,7 +585,8 @@ void updateZombies() {
                 if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
                     //game over ~~~
                     cout << "game over ~~~" << endl;
-                    exit(0);
+                    gameStatus[game_level].levelStatus = GameFailed;
+//                    exit(0);
                 }
             }
         }
@@ -583,6 +602,10 @@ void updateZombies() {
                     zombies[i].frameIndex ++;
                     if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_DEAD_PIC_2) {
                         zombies[i].isUsed = false;
+                        gameStatus[game_level].killCount ++;
+                        if (gameStatus[game_level].killCount == gameStatus[game_level].zombieMaxCount) {
+                            gameStatus[game_level].levelStatus = GameSuccess;
+                        }
                     }
                 } else if (zombies[i].eating) {
                     zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
@@ -884,6 +907,20 @@ void plantSlotDown() {
     }
 }
 
+bool checkGameStatus() {
+    int ret = false;
+    int status = gameStatus[game_level].levelStatus;
+    if (status == GameSuccess) {
+        Sleep(2000);
+        //TODO 进入下一关
+        ret = true;
+    } else if (status == GameFailed) {
+        Sleep(2000);
+        ret = false;
+    }
+    return ret;
+}
+
 int main() {
     std::cout << "Hello, PVZ!" << std::endl;
 
@@ -910,6 +947,9 @@ int main() {
             refreshFlag = false;
             updateWindow();
             updateGame();
+            if (checkGameStatus()) {
+                break;
+            }
         }
     }
 
