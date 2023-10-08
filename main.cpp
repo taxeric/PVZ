@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <ctime>
 #include <cmath>
+#include <vector>
 #include "m_local_resources.h"
 #include "models/Land.h"
 #include "models/SunshineBall.h"
@@ -53,6 +54,8 @@ using namespace std;
 //阳光飞跃时每次移动的像素 越大越快
 #define SUNSHINE_FLY_PIXEL 10
 
+//僵尸站立图片数量
+#define AMOUNT_ZOMBIE_STAND_PIC_1 5
 //僵尸攻击图片数量
 #define AMOUNT_ZOMBIE_ATTACK_PIC_1 20
 //僵尸死亡图片数量
@@ -93,6 +96,8 @@ IMAGE* imgPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
 struct Zombie zombies[10];
 //普通僵尸行走图片
 IMAGE imgZombiesPics[BASE_RES_PICS_AMOUNT];
+//普通僵尸站立图片
+IMAGE imgZombiesStandPics[AMOUNT_ZOMBIE_STAND_PIC_1];
 //普通僵尸攻击图片
 IMAGE imgZombiesAttackPics1[AMOUNT_ZOMBIE_ATTACK_PIC_1];
 //僵尸死亡图片
@@ -132,7 +137,7 @@ void gameInit() {
         sunshinePicWidth = 80;
         sunshinePicHeight = 80;
     }
-    //阳光随机数种子
+    //随机数种子
     srand(time(nullptr));
 
     //加载植物卡槽图片
@@ -159,6 +164,7 @@ void gameInit() {
     memset(zombies, 0, sizeof(zombies));
     loadNormalZombieWalkPics(21);
     loadNormalZombieAttackPics(AMOUNT_ZOMBIE_ATTACK_PIC_1);
+    loadNormalZombieStandPics(AMOUNT_ZOMBIE_STAND_PIC_1);
     loadNormalZombieDiePics(AMOUNT_ZOMBIE_DEAD_PIC_2);
 
     //加载子弹数据
@@ -269,7 +275,7 @@ void updateWindow() {
     //缓冲
     BeginBatchDraw();
 
-    putimage(-130, 0, &imgBg);
+    putimage(- WIN_OFFSET, 0, &imgBg);
     putimage(CARD_SLOT_START_X, CARD_SLOT_START_Y, &imgBar);
     setbkcolor(TRANSPARENT);
 
@@ -761,7 +767,8 @@ void startMenuUI() {
         ExMessage message{};
         if (peekmessage(&message)) {
             if (message.message == WM_LBUTTONUP && action_flag) {
-                return;
+                EndBatchDraw();
+                break;
             } else if (message.message == WM_MOUSEMOVE) {
                 bool x_value = message.x > 480 && message.x < 780;
                 bool y_value = message.y > 80 && message.y < 160;
@@ -779,11 +786,108 @@ void startMenuUI() {
     }
 }
 
+void viewScene() {
+    int xMin = WIN_WIDTH - imgBg.getwidth();
+    int zombiesStandCoordinate[9][2] = {0 };
+    for (int x = 0; x < 9; x ++) {
+        double r = 1.0 * rand() / RAND_MAX;
+        int rx = (int) (r * (800 - 600) + 500);
+        int ry = (int) (rand() % 400);
+        zombiesStandCoordinate[x][0] = rx;
+        zombiesStandCoordinate[x][1] = ry;
+    }
+    for (int x = 0; x >= xMin; x -= 2) {
+        BeginBatchDraw();
+        putimage(x, 0, &imgBg);
+        for (int k = 0; k < 9; k ++) {
+            putimage(
+                    zombiesStandCoordinate[k][0] - xMin + x,
+                    zombiesStandCoordinate[k][1],
+                    &imgZombiesStandPics[0]
+                    );
+        }
+        EndBatchDraw();
+        Sleep(5);
+    }
+
+/*    while (true) {
+        BeginBatchDraw();
+        ExMessage message{};
+        if (peekmessage(&message)) {
+        }
+        EndBatchDraw();
+    }*/
+    for (int i = 0; i < 100; i ++) {
+        BeginBatchDraw();
+        putimage(xMin, 0, &imgBg);
+        for (int k = 0; k < 9; k ++) {
+            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
+            putimage(
+                    zombiesStandCoordinate[k][0],
+                    zombiesStandCoordinate[k][1],
+                    &imgZombiesStandPics[frameIndex]
+            );
+        }
+        EndBatchDraw();
+        Sleep(30);
+    }
+
+    int count = 0;
+    int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
+    for (int x = xMin; x <= -WIN_OFFSET; x += 1) {
+        BeginBatchDraw();
+        putimage(x, 0, &imgBg);
+        count ++;
+        for (int k = 0; k < 9; k ++) {
+            putimage(
+                    zombiesStandCoordinate[k][0] - xMin + x,
+                    zombiesStandCoordinate[k][1],
+                    &imgZombiesStandPics[frameIndex]
+                    );
+            if (count >= 10) {
+                count = 0;
+                frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
+            }
+        }
+        EndBatchDraw();
+    }
+}
+
+void plantSlotDown() {
+    for (int y = -(CARD_SLOT_START_Y + BASE_CARD_HEIGHT); y <= CARD_SLOT_START_Y; y += 2) {
+        BeginBatchDraw();
+        putimage(- WIN_OFFSET, 0, &imgBg);
+        putimage(CARD_SLOT_START_X, y, &imgBar);
+
+        //绘制卡槽
+        int space_x = 0;
+        for (int i = 0; i < PLANTS_COUNT; i ++) {
+            long int x = CARD_START_X + i * BASE_CARD_WIDTH;
+            if (i > 0) {
+                space_x += SPACE_BETWEEN_CARD;
+                x += space_x;
+            }
+            if (card_slot_x_coordinate[i][0] <= 0 && card_slot_x_coordinate[i][1] <= 0) {
+                card_slot_x_coordinate[i][0] = x;
+                card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
+            }
+            putimage(x, y, &imgCardsPics[i]);
+        }
+
+        EndBatchDraw();
+        Sleep(10);
+    }
+}
+
 int main() {
     std::cout << "Hello, PVZ!" << std::endl;
 
     gameInit();
     startMenuUI();
+
+    viewScene();
+
+    plantSlotDown();
 
     int timer = 0;
     bool refreshFlag = true;
@@ -916,6 +1020,18 @@ void loadNormalZombieWalkPics(int size) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_NORMAL_ZOMBIE_WALK_PATH, "Zombie_", i);
         if (fileExist(fname)) {
             loadimage(&imgZombiesPics[i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadNormalZombieStandPics(int size) {
+    char fname[64];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_NORMAL_ZOMBIE_STAND_PATH, "Zombie_", i);
+        if (fileExist(fname)) {
+            loadimage(&imgZombiesStandPics[i], fname);
         } else {
             break;
         }

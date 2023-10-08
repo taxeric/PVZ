@@ -68,7 +68,7 @@ enum {
 #define BASE_RES_ADVENTURE_1_PATH "../res/graphics/Screen/Adventure_1.png"
 
 #define BASE_RES_BG_PATH "../res/graphics/Items/Background/Background_0.jpg"
-#define BASE_RES_BAR_BG_PATH "../res/graphics/Screen/ChooserBackground.png"
+#define BASE_RES_BAR_BG_PATH "../res/graphics/Screen/SeedBank.png"
 
 //阳光路径
 #define RES_PIC_SUNSHINE_PATH "../res/graphics/Plants/Sun/"
@@ -106,6 +106,8 @@ enum {
 
 //普通僵尸行走图片路径
 #define RES_PIC_NORMAL_ZOMBIE_WALK_PATH "../res/graphics/Zombies/NormalZombie/Zombie/"
+//普通僵尸站立图片路径
+#define RES_PIC_NORMAL_ZOMBIE_STAND_PATH "../res/graphics/Zombies/NormalZombie/ZombieStand/"
 //普通僵尸攻击图片路径
 #define RES_PIC_NORMAL_ZOMBIE_ATTACK_PATH "../res/graphics/Zombies/NormalZombie/ZombieAttack/"
 //普通僵尸头掉了图片路径
@@ -118,7 +120,7 @@ enum {
 #define RES_PIC_NORMAL_ZOMBIE_BOOM_DIE_PATH "../res/graphics/Zombies/NormalZombie/BoomDie/"
 
 //正常豌豆子弹图片
-#define RES_PIC_BULLET_PEA_NORMAL "../res/graphics/Bullets/PeaNormal/PeaNormal_0.png"
+#define RES_PIC_BULLET_PEA_NORMAL "../res/graphics/Bullets/PeaNormal/ProjectilePea.png"
 //碰撞僵尸后的豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL_EXPLODE "../res/graphics/Bullets/PeaNormalExplode/PeaNormalExplode_0.png"
 
@@ -129,6 +131,11 @@ void loadSunshineBallPics(int size);
  * @param size
  */
 void loadNormalZombieWalkPics(int size);
+
+/**
+ * 普通僵尸站立
+ */
+ void loadNormalZombieStandPics(int size);
 
 /**
  * 普通僵尸攻击
