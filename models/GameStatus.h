@@ -6,6 +6,7 @@
 #define PVZ_GAMESTATUS_H
 
 #include <easyx.h>
+#include "Plant.h"
 
 enum {
     GameIdle,
@@ -58,7 +59,17 @@ struct GameStatus {
     /**
      * 卡槽图片对应的植物, 最多6个, 每个植物最多有21幅图片, 用于切换显示摇摆~
      */
-     IMAGE* imgPlantsPics[6][21] = { nullptr };
+    IMAGE* imgPlantsPics[6][21] = { nullptr };
+
+    /**
+     * 所选植物
+     */
+    Plant* plants[6] = { nullptr };
+
+    /**
+     * 本次所选植物数量
+     */
+    int plantCount;
 
     /**
      * 关卡状态

@@ -20,4 +20,9 @@ add_executable(PVZ main.cpp
         models/Bullet.h
         models/GameStatus.h
         tools/tools.h
-        tools/tools.cpp)
+        tools/tools.cpp
+        models/Plant.h
+        models/Plant.cpp
+        models/plants/Peashooter.h
+        models/plants/Sunflower.h
+        models/plants/RepeaterPea.h)

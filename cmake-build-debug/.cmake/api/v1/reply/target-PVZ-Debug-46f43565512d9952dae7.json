@@ -80,7 +80,8 @@
 			"sourceIndexes" : 
 			[
 				0,
-				8
+				8,
+				10
 			]
 		}
 	],
@@ -191,7 +192,8 @@
 			"sourceIndexes" : 
 			[
 				0,
-				8
+				8,
+				10
 			]
 		},
 		{
@@ -204,7 +206,11 @@
 				4,
 				5,
 				6,
-				7
+				7,
+				9,
+				11,
+				12,
+				13
 			]
 		}
 	],
@@ -256,6 +262,32 @@
 			"compileGroupIndex" : 0,
 			"path" : "tools/tools.cpp",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "models/Plant.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "models/Plant.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "models/plants/Peashooter.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "models/plants/Sunflower.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "models/plants/RepeaterPea.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "EXECUTABLE"
