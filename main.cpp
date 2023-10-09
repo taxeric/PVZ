@@ -94,6 +94,7 @@ int sunshinePicWidth, sunshinePicHeight;
 
 IMAGE imgBg;
 IMAGE imgBar;
+IMAGE imgChoosePlants;
 //植物卡槽图片
 IMAGE imgCardsPics[PLANTS_COUNT];
 //植物图片
@@ -133,6 +134,7 @@ int getDelay() {
 void gameInit() {
     loadimage(&imgBg, BASE_RES_BG_PATH);
     loadimage(&imgBar, BASE_RES_BAR_BG_PATH);
+    loadimage(&imgChoosePlants, BASE_RES_CHOOSE_PLANTS_PATH);
 
     game_level = 0;
     gameStatus[game_level].levelStatus = GameIdle;
@@ -537,7 +539,7 @@ void updateSunshine() {
 }
 
 void createZombies() {
-    if (gameStatus[game_level].zombieCount >= 1) {
+    if (gameStatus[game_level].zombieCount >= gameStatus[game_level].zombieMaxCount) {
         return;
     }
 
@@ -838,38 +840,78 @@ void viewScene() {
         Sleep(5);
     }
 
-    for (int i = 0; i < 100; i ++) {
+    int imgBarHeight = imgBar.getheight();
+    int startBtnY1 = imgBarHeight + 460;
+    int startBtnY2 = startBtnY1 + 30;
+    IMAGE startBtn;
+    loadimage(&startBtn, BASE_RES_CHOOSE_PLANTS_START_BTN_PATH);
+    bool startBtnFlag = false;
+    while (true) {
         BeginBatchDraw();
         putimage(xMin, 0, &imgBg);
+        putimage(0, 0, &imgBar);
+        putimage(0, imgBarHeight, &imgChoosePlants);
+        if (startBtnFlag) {
+            putimage(155, startBtnY1, &startBtn);
+        }
         for (int k = 0; k < 9; k ++) {
-            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
+//            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
             putimagePng2(
                     zombiesStandCoordinate[k][0],
                     zombiesStandCoordinate[k][1],
-                    &imgZombiesStandPics[frameIndex]
+                    &imgZombiesStandPics[0]
             );
         }
-        EndBatchDraw();
-        Sleep(30);
-    }
 
-    int count = 0;
-    int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
-    for (int x = xMin; x <= -WIN_OFFSET; x += 1) {
-        BeginBatchDraw();
-        putimage(x, 0, &imgBg);
-        count ++;
-        for (int k = 0; k < 9; k ++) {
-            putimagePng2(
-                    zombiesStandCoordinate[k][0] - xMin + x,
-                    zombiesStandCoordinate[k][1],
-                    &imgZombiesStandPics[frameIndex]
-                    );
-            if (count >= 10) {
-                count = 0;
-                frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
+        ExMessage msg{};
+        if (peekmessage(&msg)) {
+            if (msg.message == WM_MOUSEMOVE) {
+                bool x_value = msg.x > 155 && msg.x < 310;
+                bool y_value = msg.y > startBtnY1 && msg.y < startBtnY2;
+                if (x_value && y_value) {
+                    startBtnFlag = true;
+                } else {
+                    startBtnFlag = false;
+                }
+            } else if (msg.message == WM_LBUTTONUP && startBtnFlag) {
+
+                //等待一段时间
+                for (int i = 0; i < 100; i ++) {
+                    BeginBatchDraw();
+                    putimage(xMin, 0, &imgBg);
+                    for (int k = 0; k < 9; k ++) {
+                        putimagePng2(
+                                zombiesStandCoordinate[k][0],
+                                zombiesStandCoordinate[k][1],
+                                &imgZombiesStandPics[0]
+                        );
+                    }
+                    EndBatchDraw();
+                    Sleep(1);
+                }
+                //移动到主屏幕
+                int count = 0;
+                for (int x = xMin; x <= -WIN_OFFSET; x += 1) {
+                    BeginBatchDraw();
+                    putimage(x, 0, &imgBg);
+                    count ++;
+                    for (int k = 0; k < 9; k ++) {
+                        putimagePng2(
+                                zombiesStandCoordinate[k][0] - xMin + x,
+                                zombiesStandCoordinate[k][1],
+                                &imgZombiesStandPics[0]
+                        );
+                        if (count >= 10) {
+                            count = 0;
+                        }
+                    }
+                    EndBatchDraw();
+                }
+                EndBatchDraw();
+                break;
             }
         }
+
         EndBatchDraw();
     }
 }

@@ -69,6 +69,8 @@ enum {
 
 #define BASE_RES_BG_PATH "../res/graphics/Items/Background/Background_0.jpg"
 #define BASE_RES_BAR_BG_PATH "../res/graphics/Screen/SeedBank.png"
+#define BASE_RES_CHOOSE_PLANTS_PATH "../res/graphics/Screen/PanelBackground.png"
+#define BASE_RES_CHOOSE_PLANTS_START_BTN_PATH "../res/graphics/Screen/StartButton.png"
 
 //阳光路径
 #define RES_PIC_SUNSHINE_PATH "../res/graphics/Plants/Sun/"
