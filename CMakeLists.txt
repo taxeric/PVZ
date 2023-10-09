@@ -8,10 +8,16 @@ link_directories(${EasyX_DIR}/lib64)
 
 link_libraries(libEasyX.a libgdi32.a libole32.a)
 
+set(WinLib_DIR C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.19041.0\\um\\x64)
+link_directories(${WinLib_DIR})
+link_libraries(WinMM.Lib MSImg32.Lib)
+
 add_executable(PVZ main.cpp
         m_local_resources.h
         models/Land.h
         models/SunshineBall.h
         models/Zombie.h
         models/Bullet.h
-        models/GameStatus.h)
+        models/GameStatus.h
+        tools/tools.h
+        tools/tools.cpp)
