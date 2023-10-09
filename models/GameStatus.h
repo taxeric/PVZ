@@ -5,6 +5,8 @@
 #ifndef PVZ_GAMESTATUS_H
 #define PVZ_GAMESTATUS_H
 
+#include <easyx.h>
+
 enum {
     GameIdle,
     GameRunning,
@@ -16,7 +18,7 @@ struct GameStatus {
     /**
      * 关卡
      */
-    int level;
+    int level = 0;
 
     /**
      * 生成的僵尸数量
@@ -31,17 +33,32 @@ struct GameStatus {
     /**
      * 一大波僵尸来袭次数
      */
-     int tooManyZombies;
+    int tooManyZombies;
 
     /**
      * 每次一大波僵尸来袭的僵尸数量
      */
-     int tooManyZombieCount;
+    int tooManyZombieCount;
 
     /**
      * 已经凉了的僵尸数量
      */
     int killCount;
+
+    /**
+     * 阳光数量
+     */
+    int sunshineBalls;
+
+    /**
+     * 卡槽图片, 最多6个
+     */
+    IMAGE imgCardsPics[6] = { 0 };
+
+    /**
+     * 卡槽图片对应的植物, 最多6个, 每个植物最多有21幅图片, 用于切换显示摇摆~
+     */
+     IMAGE* imgPlantsPics[6][21] = { nullptr };
 
     /**
      * 关卡状态

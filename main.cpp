@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cmath>
 #include <vector>
+#include "tools/tools.h"
 #include "m_local_resources.h"
 #include "models/Land.h"
 #include "models/SunshineBall.h"
@@ -65,7 +66,6 @@ using namespace std;
 
 //当前关卡
 int game_level;
-int game_level_index;
 //游戏状态
 struct GameStatus gameStatus[5];
 
@@ -128,33 +128,6 @@ int getDelay() {
     int ret = curTime - lastTime;
     lastTime = curTime;
     return ret;
-}
-
-void putimagePng(int x, int y, IMAGE* image) {
-    DWORD* dst = GetImageBuffer();
-    DWORD* draw = GetImageBuffer();
-    DWORD* src = GetImageBuffer(image);
-    int pw = image->getwidth();
-    int ph = image->getheight();
-    int gw = getwidth();
-    int gh = getheight();
-    int dstX = 0;
-    for (int iy = 0; iy < ph; iy ++) {
-        for (int ix = 0; ix < pw; ix ++) {
-            int srcX = ix + iy * pw;
-            int sa = ((src[srcX] & 0xFF000000) >> 24);
-            int sr = ((src[srcX] & 0xFF0000) >> 16);
-            int sg = ((src[srcX] & 0xFF00) >> 8);
-            int sb = ((src[srcX] & 0xFF));
-            if (ix >= 0 && ix <= gw && iy >= 0 && iy <= gh && dstX <= gw * gh) {
-                dstX = (ix + x) + (iy + y) * gw;
-                int dr = ((dst[dstX] & 0xFF0000) >> 16);
-                int dg = ((dst[dstX] & 0xFF00) >> 8);
-                int db = ((dst[dstX] & 0xFF));
-                draw[dstX] = ((sr * sa / 255 + dr * (255 - sa) / 255) << 16) | ((sg * sa / 255 + dg * (255 - sa) / 255) << 8) | (sb * sa / 255 + db * (255 - sa) / 255);
-            }
-        }
-    }
 }
 
 void gameInit() {
@@ -252,7 +225,7 @@ void drawPlants() {
                 IMAGE* img = imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
                 int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
                 int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
-                putimagePng(x, y, imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
+                putimagePng2(x, y, imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
             }
         }
     }
@@ -276,7 +249,7 @@ void drawZombies() {
                 }
             }
             img += zombies[i].frameIndex;
-            putimagePng(zombies[i].x, zombies[i].y - img->getheight(), img);
+            putimagePng2(zombies[i].x, zombies[i].y - img->getheight(), img);
         }
     }
 }
@@ -290,9 +263,9 @@ void drawBullets() {
         if (bullets[i].isUsed) {
             if (bullets[i].explosion) {
                 IMAGE *img = &imgBulletNormalExplode[bullets[i].frameIndex];
-                putimagePng(bullets[i].x, bullets[i].y, img);
+                putimagePng2(bullets[i].x, bullets[i].y, img);
             } else {
-                putimagePng(bullets[i].x, bullets[i].y, &imgBulletNormal);
+                putimagePng2(bullets[i].x, bullets[i].y, &imgBulletNormal);
             }
         }
     }
@@ -306,7 +279,7 @@ void drawSunshineBalls() {
     for (int i = 0; i < sunshineBallMax; i ++) {
         if (sunshineBalls[i].isUsed || sunshineBalls[i].xOffset > 0) {
             IMAGE* sunshineImg = &imgSunshineBallPics[sunshineBalls[i].frameIndex];
-            putimagePng(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
+            putimagePng2(sunshineBalls[i].x, sunshineBalls[i].y, sunshineImg);
         }
     }
 }
@@ -338,7 +311,7 @@ void updateWindow() {
     //拖动绘制
     if (curMovePlantPos > 0) {
         IMAGE* img = imgPlantsPics[curMovePlantPos - 1][0];
-        putimagePng(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
+        putimagePng2(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
     }
 
     char scoreText[8];
@@ -564,11 +537,11 @@ void updateSunshine() {
 }
 
 void createZombies() {
-    if (gameStatus[game_level].zombieCount >= gameStatus[game_level].zombieMaxCount) {
+    if (gameStatus[game_level].zombieCount >= 1) {
         return;
     }
 
-    static int zombieFre = 400;//僵尸生成间隔
+    static int zombieFre = 40;//僵尸生成间隔
     static int count = 0;
     count ++;
     if (count > zombieFre) {
@@ -817,7 +790,7 @@ void startMenuUI() {
         BeginBatchDraw();
 
         putimage(0, 0, &imgStartUIBg);
-        putimagePng(480, 80, move_flag ? &imgAdventure1 : &imgAdventure0);
+        putimagePng3(480, 80, move_flag ? &imgAdventure1 : &imgAdventure0);
 
         ExMessage message{};
         if (peekmessage(&message)) {
@@ -855,7 +828,7 @@ void viewScene() {
         BeginBatchDraw();
         putimage(x, 0, &imgBg);
         for (int k = 0; k < 9; k ++) {
-            putimagePng(
+            putimagePng2(
                     zombiesStandCoordinate[k][0] - xMin + x,
                     zombiesStandCoordinate[k][1],
                     &imgZombiesStandPics[0]
@@ -865,19 +838,12 @@ void viewScene() {
         Sleep(5);
     }
 
-/*    while (true) {
-        BeginBatchDraw();
-        ExMessage message{};
-        if (peekmessage(&message)) {
-        }
-        EndBatchDraw();
-    }*/
     for (int i = 0; i < 100; i ++) {
         BeginBatchDraw();
         putimage(xMin, 0, &imgBg);
         for (int k = 0; k < 9; k ++) {
             int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
-            putimagePng(
+            putimagePng2(
                     zombiesStandCoordinate[k][0],
                     zombiesStandCoordinate[k][1],
                     &imgZombiesStandPics[frameIndex]
@@ -894,7 +860,7 @@ void viewScene() {
         putimage(x, 0, &imgBg);
         count ++;
         for (int k = 0; k < 9; k ++) {
-            putimagePng(
+            putimagePng2(
                     zombiesStandCoordinate[k][0] - xMin + x,
                     zombiesStandCoordinate[k][1],
                     &imgZombiesStandPics[frameIndex]
@@ -983,17 +949,6 @@ int main() {
     _getch();
 
     return 0;
-}
-
-bool fileExist(const char * filename) {
-    bool exist = false;
-    FILE* fp;
-    fopen_s(&fp, filename, "r");
-    if (fp != nullptr) {
-        exist = true;
-        fclose(fp);
-    }
-    return exist;
 }
 
 void loadSunshineBallPics(int size) {

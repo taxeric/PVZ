@@ -56,6 +56,13 @@ build CMakeFiles/PVZ.dir/main.cpp.obj: CXX_COMPILER__PVZ_unscanned_Debug E$:/Pro
   OBJECT_DIR = CMakeFiles\PVZ.dir
   OBJECT_FILE_DIR = CMakeFiles\PVZ.dir
 
+build CMakeFiles/PVZ.dir/tools/tools.cpp.obj: CXX_COMPILER__PVZ_unscanned_Debug E$:/Program/C/PVZ/tools/tools.cpp || cmake_object_order_depends_target_PVZ
+  DEP_FILE = CMakeFiles\PVZ.dir\tools\tools.cpp.obj.d
+  FLAGS = -g -fdiagnostics-color=always
+  INCLUDES = -ID:/c++easyx/include
+  OBJECT_DIR = CMakeFiles\PVZ.dir
+  OBJECT_FILE_DIR = CMakeFiles\PVZ.dir\tools
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target PVZ
@@ -64,10 +71,10 @@ build CMakeFiles/PVZ.dir/main.cpp.obj: CXX_COMPILER__PVZ_unscanned_Debug E$:/Pro
 #############################################
 # Link the executable PVZ.exe
 
-build PVZ.exe: CXX_EXECUTABLE_LINKER__PVZ_Debug CMakeFiles/PVZ.dir/main.cpp.obj
+build PVZ.exe: CXX_EXECUTABLE_LINKER__PVZ_Debug CMakeFiles/PVZ.dir/main.cpp.obj CMakeFiles/PVZ.dir/tools/tools.cpp.obj
   FLAGS = -g
-  LINK_LIBRARIES = -Wl,-Bstatic  -lEasyX  -lgdi32  -lole32  -Wl,-Bdynamic  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
-  LINK_PATH = -LD:/c++easyx/lib64
+  LINK_LIBRARIES = -Wl,-Bstatic  -lEasyX  -lgdi32  -lole32  -Wl,-Bdynamic  -lWinMM  -lMSImg32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  LINK_PATH = -LD:/c++easyx/lib64   -LC:/Program   -LE:/Program/C/PVZ/Files   -LE:/Program/C/PVZ/(   -LE:/Program/C/PVZ/x86   -LE:/Program/C/PVZ/)   -L/Windows   -LE:/Program/C/PVZ/Kits/10/Lib/10.0.19041.0/um/x64
   OBJECT_DIR = CMakeFiles\PVZ.dir
   POST_BUILD = cd .
   PRE_LINK = cd .
