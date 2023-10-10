@@ -400,7 +400,7 @@ void userClickEvent() {
                         landMap[row][column].type = curMovePlantPos;
                         landMap[row][column].frameIndex = 0;
                         landMap[row][column].caught = false;
-                        landMap[row][column].deadTime = 10;
+                        landMap[row][column].deadTime = 0;
                         landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
                         landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
                         cout << "event: [up] (" << row << "," << column << ") plant index = " << landMap[row][column].type << endl;
@@ -565,6 +565,8 @@ void createZombies() {
             zombie->head = false;
             zombie->lostHead = false;
             zombie->dead = false;
+            zombie->attackRow = -1;
+            zombie->attackColumn = -1;
             gameStatus[game_level].zombieCount ++;
         }
     }
@@ -727,26 +729,41 @@ void checkZombie2Plant() {
                         static int count = 0;
                         count ++;
                         if (landMap[row][column].caught) {
+                            if (!zombies[i].eating) {//如果之后的僵尸没有停下来
+                                zombies[i].eating = true;
+                                zombies[i].speed = 0;
+                                zombies[i].frameIndex = 0;
+                                zombies[i].attackRow = row;
+                                zombies[i].attackColumn = column;
+                            }
                             if (count > 20) {//越大切换图片越慢
                                 count = 0;
                                 zombies[i].frameIndex ++;
+                                landMap[row][column].deadTime ++;
                             }
-                            landMap[row][column].deadTime ++;
-                            if (landMap[row][column].deadTime > 100) {
+                            if (landMap[row][column].deadTime >= 100) {
+                                for (int m = 0; m < zombieCount; m ++) {
+                                    if (zombies[m].attackRow == row && zombies[m].attackColumn == column) {
+                                        zombies[m].attackRow = -1;
+                                        zombies[m].attackColumn = -1;
+                                        zombies[m].eating = false;
+                                        zombies[m].speed = 1;
+                                        zombies[m].frameIndex = rand() % BASE_RES_PICS_AMOUNT;
+                                    }
+                                }
                                 landMap[row][column].deadTime = 0;
                                 landMap[row][column].caught = false;
                                 landMap[row][column].type = 0;
-                                zombies[i].eating = false;
-                                zombies[i].speed = 1;
-                                zombies[i].frameIndex = 0;
                             } else {
                                 if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_ATTACK_PIC_1) {
                                     zombies[i].frameIndex = 0;
                                 }
                             }
                         } else {
-                            landMap[row][column].deadTime = 0;
+                            //在植物种下时已经初始化deadTime=0, 故这里只需重置捕获状态即可
                             landMap[row][column].caught = true;
+                            zombies[i].attackRow = row;
+                            zombies[i].attackColumn = column;
                             zombies[i].eating = true;
                             zombies[i].speed = 0;
                             zombies[i].frameIndex = 0;

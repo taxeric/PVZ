@@ -16,6 +16,12 @@ struct Zombie {
     bool head;
     bool lostHead;
     bool dead;
+
+    /**
+     * 当前攻击的植物行列
+     */
+     int attackRow;
+     int attackColumn;
 };
 
 #endif //PVZ_ZOMBIE_H
