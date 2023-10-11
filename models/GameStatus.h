@@ -6,6 +6,7 @@
 #define PVZ_GAMESTATUS_H
 
 #include <easyx.h>
+#include <vector>
 #include "Plant.h"
 
 enum {
@@ -49,7 +50,7 @@ struct GameStatus {
     /**
      * 阳光数量
      */
-    int sunshineBalls;
+    int sunshine;
 
     /**
      * 卡槽图片, 最多6个
@@ -62,9 +63,14 @@ struct GameStatus {
     IMAGE* imgPlantsPics[6][21] = { nullptr };
 
     /**
-     * 所选植物
+     * 所选植物在卡槽的下标, -1表示未选
      */
-    Plant* plants[6] = { nullptr };
+     int choosePlantsIndex[6];
+
+     /**
+      * 所选植物
+      */
+     std::vector<Plant*> choosePlants;
 
     /**
      * 本次所选植物数量

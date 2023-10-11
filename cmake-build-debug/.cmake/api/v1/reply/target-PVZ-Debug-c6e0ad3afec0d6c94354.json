@@ -210,7 +210,8 @@
 				9,
 				11,
 				12,
-				13
+				13,
+				14
 			]
 		}
 	],
@@ -287,6 +288,11 @@
 		{
 			"backtrace" : 1,
 			"path" : "models/plants/RepeaterPea.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"path" : "models/plants/PotatoMine.h",
 			"sourceGroupIndex" : 1
 		}
 	],

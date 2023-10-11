@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cmath>
 #include <vector>
+#include <map>
 #include "tools/tools.h"
 #include "m_local_resources.h"
 #include "models/Land.h"
@@ -12,6 +13,10 @@
 #include "models/Zombie.h"
 #include "models/Bullet.h"
 #include "models/GameStatus.h"
+#include "models/plants/Sunflower.h"
+#include "models/plants/Peashooter.h"
+#include "models/plants/RepeaterPea.h"
+#include "models/plants/PotatoMine.h"
 
 using namespace std;
 
@@ -22,7 +27,12 @@ using namespace std;
 //图片资源最大数量
 #define BASE_RES_PICS_AMOUNT 21
 
-//卡槽起始坐标
+//游戏开始前已选择植物卡槽起点
+#define GAME_PLANT_CARD_SLOT_CHOICE_X 80
+//游戏开始前植物卡槽仓库起点
+#define GAME_PLANT_CARD_SLOT_STORE_X 23
+
+//卡槽起始坐标(包含左侧阳光数)
 #define CARD_SLOT_START_X (250 - WIN_OFFSET)
 #define CARD_SLOT_START_Y 0
 
@@ -31,7 +41,7 @@ using namespace std;
 #define BASE_CARD_HEIGHT 72
 //卡槽之间间距
 #define SPACE_BETWEEN_CARD 2
-//卡片卡槽起始坐标
+//卡片卡槽起始坐标(不包含左侧阳光数)
 #define CARD_START_X (325 - WIN_OFFSET)
 #define CARD_START_Y 7
 
@@ -69,6 +79,8 @@ int game_level;
 //游戏状态
 struct GameStatus gameStatus[5];
 
+std::map<int, Plant*> globalPlantMap;
+
 //是否首次绘制
 bool isFirstDraw = true;
 //卡槽之间的间距总和
@@ -95,10 +107,10 @@ int sunshinePicWidth, sunshinePicHeight;
 IMAGE imgBg;
 IMAGE imgBar;
 IMAGE imgChoosePlants;
-//植物卡槽图片
-IMAGE imgCardsPics[PLANTS_COUNT];
-//植物图片
-IMAGE* imgPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
+//全局植物卡槽图片, 游戏内的植物卡槽图片都通过它获取
+IMAGE imgGlobalCardsPics[PLANTS_COUNT];
+//全局植物图片, 游戏内的植物动图都通过它获取
+IMAGE* imgGlobalPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
 
 //僵尸池
 struct Zombie zombies[10];
@@ -136,11 +148,18 @@ void gameInit() {
     loadimage(&imgBar, BASE_RES_BAR_BG_PATH);
     loadimage(&imgChoosePlants, BASE_RES_CHOOSE_PLANTS_PATH);
 
+    globalPlantMap.insert(make_pair(SUNFLOWER, new Sunflower("", "", 0, SUNFLOWER)));
+    globalPlantMap.insert(make_pair(PEASHOOT, new Peashooter("", "", 0, PEASHOOT)));
+    globalPlantMap.insert(make_pair(POTATOMINE, new PotatoMine(POTATOMINE)));
+    globalPlantMap.insert(make_pair(REPEATERPEA, new RepeaterPea("", "", 0, REPEATERPEA)));
+
     game_level = 0;
     gameStatus[game_level].levelStatus = GameIdle;
     gameStatus[game_level].level = game_level + 1;
     gameStatus[game_level].killCount = 0;
     gameStatus[game_level].zombieMaxCount = 10;
+    gameStatus[game_level].sunshine = 50;
+    memset(gameStatus[game_level].choosePlantsIndex, -1, sizeof(gameStatus[game_level].choosePlantsIndex));
 
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
     //加载阳光图片
@@ -156,24 +175,24 @@ void gameInit() {
     srand(time(nullptr));
 
     //加载植物卡槽图片
-    loadimage(&imgCardsPics[0], RES_CARD_PIC_SUNFLOWER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCardsPics[1], RES_CARD_PIC_PEASHOOTER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCardsPics[2], RES_CARD_PIC_POTATOMINE, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCardsPics[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCardsPics[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgCardsPics[5], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[0], RES_CARD_PIC_SUNFLOWER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[1], RES_CARD_PIC_PEASHOOTER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[2], RES_CARD_PIC_POTATOMINE, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+//    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+//    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 
     //土地
     memset(landMap, 0, sizeof(landMap));
 
     //加载植物图片
-    memset(imgPlantsPics, 0, sizeof(imgPlantsPics));
-    loadSunflowerPics(17);
-    loadPeashooterPics(12);
-    loadPotatoMinePics(12);
-    loadJalapenoPics(7);
-    loadChomperPics(12);
-    loadRepeatPeaShootPics(14);
+    memset(imgGlobalPlantsPics, 0, sizeof(imgGlobalPlantsPics));
+    loadSunflowerPics(0, 17);
+    loadPeashooterPics(1, 12);
+    loadPotatoMinePics(2, 12);
+//    loadJalapenoPics(7);
+//    loadChomperPics(12);
+    loadRepeatPeaShootPics(3, 14);
 
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
@@ -224,10 +243,10 @@ void drawPlants() {
             if (landMap[i][j].type > 0) {
                 //获取当前选择的植物下标
                 int curPlantIndex = landMap[i][j].type - 1;
-                IMAGE* img = imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
+                IMAGE* img = imgGlobalPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
                 int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
                 int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
-                putimagePng2(x, y, imgPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
+                putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
             }
         }
     }
@@ -307,17 +326,17 @@ void updateWindow() {
             card_slot_x_coordinate[i][0] = x;
             card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
         }
-        putimage(x, CARD_START_Y, &imgCardsPics[i]);
+        putimage(x, CARD_START_Y, &imgGlobalCardsPics[i]);
     }
 
     //拖动绘制
     if (curMovePlantPos > 0) {
-        IMAGE* img = imgPlantsPics[curMovePlantPos - 1][0];
+        IMAGE* img = imgGlobalPlantsPics[curMovePlantPos - 1][0];
         putimagePng2(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
     }
 
     char scoreText[8];
-    sprintf_s(scoreText, sizeof(scoreText), "%d", gross_sunshine);
+    sprintf_s(scoreText, sizeof(scoreText), "%d", gameStatus[game_level].sunshine);
     outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
 
     drawPlants();
@@ -343,6 +362,7 @@ void collectSunshine(ExMessage* message) {
                 sunshineBall->status = SUNSHINE_COLLECT;
                 sunshineBall->speed = 1.0;
                 gross_sunshine += SUNSHINE_AMOUNT;
+                gameStatus[game_level].sunshine += SUNSHINE_AMOUNT;
 //                cout << "sunshine amount = " << gross_sunshine << endl;
                 //设置偏移
                 float destX = CARD_SLOT_START_X;
@@ -424,7 +444,7 @@ void updatePlants() {
                     landMap[i][j].frameIndex++;
                     int plantIndex = landMap[i][j].type - 1;
                     int frameIndex = landMap[i][j].frameIndex;
-                    if (imgPlantsPics[plantIndex][frameIndex] == nullptr) {
+                    if (imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
                         landMap[i][j].frameIndex = 0;
                     }
                 }
@@ -450,14 +470,14 @@ void createSunshine() {
         sunshineBall->isUsed = true;
         sunshineBall->frameIndex = 0;
         sunshineBall->x = LAND_MAP_START_X + rand() % (LAND_MAP_END_X - LAND_MAP_START_X);
-//    sunshineBalls[i].y = LAND_MAP_START_Y + rand() % (LAND_MAP_END_Y - LAND_MAP_START_Y);
+//    sunshine[i].y = LAND_MAP_START_Y + rand() % (LAND_MAP_END_Y - LAND_MAP_START_Y);
         sunshineBall->y = LAND_MAP_START_Y;
         sunshineBall->destY = LAND_MAP_START_Y + (rand() % 4) * 90;
         sunshineBall->timer = 0;
         sunshineBall->xOffset = 0;
         sunshineBall->yOffset = 0;
         sunshineBall->status = SUNSHINE_DOWN;
-//        cout << "produce gross_sunshine - " << i << " (" << sunshineBalls[i].x << "," << sunshineBalls[i].y << "," << sunshineBalls[i].destY << ")" << endl;
+//        cout << "produce gross_sunshine - " << i << " (" << sunshine[i].x << "," << sunshine[i].y << "," << sunshine[i].destY << ")" << endl;
     }
 
     int sunshineBallMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
@@ -472,7 +492,7 @@ void createSunshine() {
                     if (k >= sunshineBallMax) {
                         return;
                     }
-                    IMAGE* sunflowerImg = imgPlantsPics[SUNFLOWER][0];
+                    IMAGE* sunflowerImg = imgGlobalPlantsPics[SUNFLOWER][0];
                     struct SunshineBall* sunshineBall = &sunshineBalls[k];
                     sunshineBall->isUsed = true;
                     sunshineBall->x = landMap[row][column].x;
@@ -655,7 +675,7 @@ void plantsShoot() {
 
                         int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
                         int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
-                        bullets[k].x = plantX + imgPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
+                        bullets[k].x = plantX + imgGlobalPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
                         bullets[k].y = plantY + 5;
                     }
                 }
@@ -863,6 +883,10 @@ void viewScene() {
     IMAGE startBtn;
     loadimage(&startBtn, BASE_RES_CHOOSE_PLANTS_START_BTN_PATH);
     bool startBtnFlag = false;
+    bool choosePlantFlag = false;
+    bool removePlantFlag = false;
+    //卡槽仓库起点y
+    int cardSlotStorePlantY = imgBarHeight + 40;
     while (true) {
         BeginBatchDraw();
         putimage(xMin, 0, &imgBg);
@@ -871,6 +895,11 @@ void viewScene() {
         if (startBtnFlag) {
             putimage(155, startBtnY1, &startBtn);
         }
+        //资源有限, 就手动存4个了先2333~~~
+        putimage(GAME_PLANT_CARD_SLOT_STORE_X, cardSlotStorePlantY, &imgGlobalCardsPics[0]);
+        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH, cardSlotStorePlantY, &imgGlobalCardsPics[1]);
+        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 2, cardSlotStorePlantY, &imgGlobalCardsPics[2]);
+        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 3, cardSlotStorePlantY, &imgGlobalCardsPics[3]);
         for (int k = 0; k < 9; k ++) {
 //            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
             putimagePng2(
@@ -880,52 +909,102 @@ void viewScene() {
             );
         }
 
+        for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i ++) {
+            Plant* plant = gameStatus[game_level].choosePlants[i];
+            putimage(GAME_PLANT_CARD_SLOT_CHOICE_X + BASE_CARD_WIDTH * i, CARD_START_Y, &imgGlobalCardsPics[plant->index]);
+        }
+
         ExMessage msg{};
         if (peekmessage(&msg)) {
-            if (msg.message == WM_MOUSEMOVE) {
-                bool x_value = msg.x > 155 && msg.x < 310;
-                bool y_value = msg.y > startBtnY1 && msg.y < startBtnY2;
-                if (x_value && y_value) {
+            if (msg.message == WM_LBUTTONDOWN) {
+                //下面的卡槽仓库点击坐标
+                bool x_c_p_1 = msg.x > GAME_PLANT_CARD_SLOT_STORE_X && msg.x < CARD_SLOT_START_X + BASE_CARD_WIDTH * 5;
+                bool y_c_p_1 = msg.y > cardSlotStorePlantY && msg.y < cardSlotStorePlantY + BASE_CARD_HEIGHT;
+                //上面的已选择的植物卡槽点击坐标
+                bool x_c_p_2 = msg.x > GAME_PLANT_CARD_SLOT_CHOICE_X && msg.x < CARD_SLOT_START_X + BASE_CARD_WIDTH * 5;
+                bool y_c_p_2 = msg.y > CARD_START_Y && msg.y < CARD_START_Y + BASE_CARD_HEIGHT;
+                if (x_c_p_1 && y_c_p_1) {
+                    choosePlantFlag = true;
+                } else {
+                    choosePlantFlag = false;
+                }
+                if (x_c_p_2 && y_c_p_2) {
+                    removePlantFlag = true;
+                } else {
+                    removePlantFlag = false;
+                }
+            } else if (msg.message == WM_MOUSEMOVE) {
+                bool x_value_start_btn = msg.x > 155 && msg.x < 310;
+                bool y_value_start_btn = msg.y > startBtnY1 && msg.y < startBtnY2;
+                if (x_value_start_btn && y_value_start_btn) {
                     startBtnFlag = true;
                 } else {
                     startBtnFlag = false;
                 }
-            } else if (msg.message == WM_LBUTTONUP && startBtnFlag) {
-
-                //等待一段时间
-                for (int i = 0; i < 100; i ++) {
-                    BeginBatchDraw();
-                    putimage(xMin, 0, &imgBg);
-                    for (int k = 0; k < 9; k ++) {
-                        putimagePng2(
-                                zombiesStandCoordinate[k][0],
-                                zombiesStandCoordinate[k][1],
-                                &imgZombiesStandPics[0]
-                        );
-                    }
-                    EndBatchDraw();
-                    Sleep(1);
+            } else if (msg.message == WM_LBUTTONUP) {
+                if (removePlantFlag) {
+                    //获取对应已选择的植物卡槽的下标
+                    int x_index = (msg.x - GAME_PLANT_CARD_SLOT_STORE_X) / BASE_CARD_WIDTH;
+                    //移除
+                    gameStatus[game_level].choosePlants.erase(gameStatus[game_level].choosePlants.begin() + x_index - 1);
+                    removePlantFlag = false;
                 }
-                //移动到主屏幕
-                int count = 0;
-                for (int x = xMin; x <= -WIN_OFFSET; x += 1) {
-                    BeginBatchDraw();
-                    putimage(x, 0, &imgBg);
-                    count ++;
-                    for (int k = 0; k < 9; k ++) {
-                        putimagePng2(
-                                zombiesStandCoordinate[k][0] - xMin + x,
-                                zombiesStandCoordinate[k][1],
-                                &imgZombiesStandPics[0]
-                        );
-                        if (count >= 10) {
-                            count = 0;
+                if (choosePlantFlag) {
+                    int x_index = (msg.x - GAME_PLANT_CARD_SLOT_STORE_X) / BASE_CARD_WIDTH;
+                    //判断是否已经存在
+                    auto plantIte = globalPlantMap.find(x_index);
+                    bool isExist = false;
+                    for (int e = 0; e < gameStatus[game_level].choosePlants.size(); e ++) {
+                        if (gameStatus[game_level].choosePlants[e]->index == x_index) {
+                            isExist = true;
+                            break;
                         }
                     }
-                    EndBatchDraw();
+                    //如果植物还没有被选择
+                    if (!isExist) {
+                        //从全局map中获取对应植物
+                        if (plantIte != globalPlantMap.end()) {
+                            gameStatus[game_level].choosePlants.push_back(plantIte->second);
+                        }
+                    }
+                    choosePlantFlag = false;
                 }
-                EndBatchDraw();
-                break;
+                if (startBtnFlag) {
+                    //等待一段时间
+                    for (int i = 0; i < 100; i++) {
+                        BeginBatchDraw();
+                        putimage(xMin, 0, &imgBg);
+                        for (int k = 0; k < 9; k++) {
+                            putimagePng2(
+                                    zombiesStandCoordinate[k][0],
+                                    zombiesStandCoordinate[k][1],
+                                    &imgZombiesStandPics[0]
+                            );
+                        }
+                        EndBatchDraw();
+                        Sleep(1);
+                    }
+                    //移动到主屏幕
+                    int count = 0;
+                    for (int x = xMin; x <= -WIN_OFFSET; x += 1) {
+                        BeginBatchDraw();
+                        putimage(x, 0, &imgBg);
+                        count++;
+                        for (int k = 0; k < 9; k++) {
+                            putimagePng2(
+                                    zombiesStandCoordinate[k][0] - xMin + x,
+                                    zombiesStandCoordinate[k][1],
+                                    &imgZombiesStandPics[0]
+                            );
+                            if (count >= 10) {
+                                count = 0;
+                            }
+                        }
+                        EndBatchDraw();
+                    }
+                    EndBatchDraw();
+                    break;
+                }
             }
         }
 
@@ -951,7 +1030,7 @@ void plantSlotDown() {
                 card_slot_x_coordinate[i][0] = x;
                 card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
             }
-            putimage(x, y, &imgCardsPics[i]);
+            putimage(x, y, &imgGlobalCardsPics[i]);
         }
 
         EndBatchDraw();
@@ -1022,78 +1101,78 @@ void loadSunshineBallPics(int size) {
     }
 }
 
-void loadSunflowerPics(int size) {
+void loadSunflowerPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_SUNFLOWER_PATH, "SunFLower_", i);
         if (fileExist(fname)) {
-            imgPlantsPics[0][i] = new IMAGE;
-            loadimage(imgPlantsPics[0][i], fname);
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
         } else {
             break;
         }
     }
 }
 
-void loadPeashooterPics(int size) {
+void loadPeashooterPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_PEASHOOTER_PATH, "Peashooter_", i);
         if (fileExist(fname)) {
-            imgPlantsPics[1][i] = new IMAGE;
-            loadimage(imgPlantsPics[1][i], fname);
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
         } else {
             break;
         }
     }
 }
 
-void loadPotatoMinePics(int size) {
+void loadPotatoMinePics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_POTATOMINE_PATH, "PotatoMine_", i);
         if (fileExist(fname)) {
-            imgPlantsPics[2][i] = new IMAGE;
-            loadimage(imgPlantsPics[2][i], fname);
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
         } else {
             break;
         }
     }
 }
 
-void loadJalapenoPics(int size) {
+void loadJalapenoPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_JALAPENO_PATH, "Jalapeno_", i);
         if (fileExist(fname)) {
-            imgPlantsPics[3][i] = new IMAGE;
-            loadimage(imgPlantsPics[3][i], fname);
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
         } else {
             break;
         }
     }
 }
 
-void loadChomperPics(int size) {
+void loadChomperPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_CHOMPER_PATH, "Chomper_", i);
         if (fileExist(fname)) {
-            imgPlantsPics[4][i] = new IMAGE;
-            loadimage(imgPlantsPics[4][i], fname);
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
         } else {
             break;
         }
     }
 }
 
-void loadRepeatPeaShootPics(int size) {
+void loadRepeatPeaShootPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_REPEATERPEA_PATH, "RepeaterPea_", i);
         if (fileExist(fname)) {
-            imgPlantsPics[5][i] = new IMAGE;
-            loadimage(imgPlantsPics[5][i], fname);
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
         } else {
             break;
         }
