@@ -9,10 +9,11 @@
 
 class Sunflower: public Plant {
 
-    Sunflower(std::string cardPath, std::string actionPath, int actionPicCount) {
+public:Sunflower(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
         this->setName("向日葵");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
+        this->index = index;
         this->cd = 10;
         this->hp = 100;
         this->sunshine = 50;

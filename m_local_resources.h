@@ -24,12 +24,12 @@ enum {
     /**
      * 火爆辣椒
      */
-    JALAPENO,
+//    JALAPENO,
 
     /**
      * 食人花
      */
-    CHOMPER,
+//    CHOMPER,
 
     /**
      * 双发射手
@@ -169,11 +169,11 @@ void loadNormalZombieDiePics(int size);
  */
 void loadZombieBoomDiePics(int size);
 
-void loadSunflowerPics(int size);
-void loadPeashooterPics(int size);
-void loadPotatoMinePics(int size);
-void loadJalapenoPics(int size);
-void loadChomperPics(int size);
-void loadRepeatPeaShootPics(int size);
+void loadSunflowerPics(int index, int size);
+void loadPeashooterPics(int index, int size);
+void loadPotatoMinePics(int index, int size);
+void loadJalapenoPics(int index, int size);
+void loadChomperPics(int index, int size);
+void loadRepeatPeaShootPics(int index, int size);
 
 #endif //PVZ_M_LOCAL_RESOURCES_H

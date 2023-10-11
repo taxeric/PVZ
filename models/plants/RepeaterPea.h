@@ -2,17 +2,18 @@
 // Created by 幻弦让叶 on 2023/10/9.
 //
 
-#ifndef PVZ_SUNFLOWER_H
-#define PVZ_SUNFLOWER_H
+#ifndef PVZ_REPEATERPEA_H
+#define PVZ_REPEATERPEA_H
 
 #include "../Plant.h"
 
 class RepeaterPea: public Plant {
 
-    RepeaterPea(std::string cardPath, std::string actionPath, int actionPicCount) {
+public:RepeaterPea(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
         this->setName("双发射手");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
+        this->index = index;
         this->cd = 30;
         this->hp = 100;
         this->sunshine = 200;
@@ -26,4 +27,4 @@ class RepeaterPea: public Plant {
     }
 };
 
-#endif //PVZ_SUNFLOWER_H
+#endif //PVZ_REPEATERPEA_H

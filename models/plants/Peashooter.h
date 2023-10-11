@@ -9,10 +9,11 @@
 
 class Peashooter: public Plant {
 
-    Peashooter(std::string cardPath, std::string actionPath, int actionPicCount) {
+public:Peashooter(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
         this->setName("豌豆射手");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
+        this->index = index;
         this->cd = 10;
         this->hp = 100;
         this->sunshine = 100;

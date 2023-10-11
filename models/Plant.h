@@ -14,6 +14,10 @@ private:
     std::string actionPath;
 
 public:
+    /**
+     * 在植物map中的下标, 也对应全局植物卡槽初始化时的下标
+     */
+    int index;
     int actionPicCount;
     int sunshine;
     int hp;
