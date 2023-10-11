@@ -92,6 +92,8 @@ int card_slot_x_coordinate[PLANTS_COUNT][2];
 int curMovePlantX, curMovePlantY;
 //当前移动的植物位置, 从1开始, 用于判断是否选中植物, 0->未选择植物
 int curMovePlantPos;
+//当前移动的植物卡槽下标
+int curMovePlantCardSlotIndex;
 
 //土地
 struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
@@ -219,6 +221,7 @@ void gameInit() {
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
     curMovePlantPos = 0;
+    curMovePlantCardSlotIndex = -1;
     gross_sunshine = 50;
 
 //    gross_card_slot_space_x = (PLANTS_COUNT - 1) * SPACE_BETWEEN_CARD;
@@ -325,6 +328,15 @@ void drawSunshineBalls() {
     }
 }
 
+/**
+ * 绘制阳光数量
+ */
+ void drawSunshineScore() {
+    char scoreText[8];
+    sprintf_s(scoreText, sizeof(scoreText), "%d", gameStatus[game_level].sunshine);
+    outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
+ }
+
 void updateWindow() {
     //缓冲
     BeginBatchDraw();
@@ -341,9 +353,7 @@ void updateWindow() {
         putimagePng2(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
     }
 
-    char scoreText[8];
-    sprintf_s(scoreText, sizeof(scoreText), "%d", gameStatus[game_level].sunshine);
-    outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
+    drawSunshineScore();
 
     drawPlants();
     drawZombies();
@@ -395,12 +405,26 @@ void userClickEvent() {
             bool y_value = message.y > CARD_START_Y && message.y < BASE_CARD_HEIGHT;
             if (x_value && y_value) {
                 for (int x_index = 0; x_index < gameStatus[game_level].choosePlants.size(); x_index ++) {
+                    //当前点击的植物
+                    Plant* plant = gameStatus[game_level].choosePlants[x_index];
+                    //当前阳光
+                    int sunshine = gameStatus[game_level].sunshine;
+                    //检查是否点击了占位
                     if (message.x > card_slot_x_coordinate[x_index][0] && message.x < card_slot_x_coordinate[x_index][1]) {
-//                        cout << "valid click -> " << x_index << endl;
-                        status = 1;
-                        curMovePlantX = message.x;
-                        curMovePlantY = message.y;
-                        curMovePlantPos = gameStatus[game_level].choosePlants[x_index]->index + 1;
+                        //检查阳光
+                        if (sunshine >= plant->sunshine) {
+                            status = 1;
+                            curMovePlantX = message.x;
+                            curMovePlantY = message.y;
+                            curMovePlantPos = plant->index + 1;
+                            curMovePlantCardSlotIndex = x_index;
+                            if (getcolor() != BLACK) {
+                                setcolor(BLACK);
+                                drawSunshineScore();
+                            }
+                        } else {
+                            setcolor(RED);
+                        }
                         break;
                     }
                 }
@@ -422,7 +446,6 @@ void userClickEvent() {
                 if (x_value && y_value) {
                     int row = (message.y - LAND_MAP_START_Y) / LAND_MAP_SINGLE_HEIGHT;
                     int column = (message.x - LAND_MAP_START_X) / LAND_MAP_SINGLE_WIDTH;
-//                    Land curLand = ;
                     if (landMap[row][column].type <= 0) {
                         landMap[row][column].type = curMovePlantPos;
                         landMap[row][column].frameIndex = 0;
@@ -430,11 +453,13 @@ void userClickEvent() {
                         landMap[row][column].deadTime = 0;
                         landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
                         landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
+                        gameStatus[game_level].sunshine -= gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine;
                         cout << "event: [up] (" << row << "," << column << ") plant index = " << landMap[row][column].type << endl;
                     }
                 }
                 status = 0;
                 curMovePlantPos = 0;
+                curMovePlantCardSlotIndex = -1;
             }
         }
     }
@@ -477,14 +502,12 @@ void createSunshine() {
         sunshineBall->isUsed = true;
         sunshineBall->frameIndex = 0;
         sunshineBall->x = LAND_MAP_START_X + rand() % (LAND_MAP_END_X - LAND_MAP_START_X);
-//    sunshine[i].y = LAND_MAP_START_Y + rand() % (LAND_MAP_END_Y - LAND_MAP_START_Y);
         sunshineBall->y = LAND_MAP_START_Y;
         sunshineBall->destY = LAND_MAP_START_Y + (rand() % 4) * 90;
         sunshineBall->timer = 0;
         sunshineBall->xOffset = 0;
         sunshineBall->yOffset = 0;
         sunshineBall->status = SUNSHINE_DOWN;
-//        cout << "produce gross_sunshine - " << i << " (" << sunshine[i].x << "," << sunshine[i].y << "," << sunshine[i].destY << ")" << endl;
     }
 
     int sunshineBallMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
@@ -559,7 +582,6 @@ void updateSunshine() {
             if (sunshineBalls[i].x <= CARD_SLOT_START_X || sunshineBalls[i].y <= CARD_SLOT_START_Y) {
                 sunshineBalls[i].xOffset = 0;
                 sunshineBalls[i].yOffset = 0;
-//                gross_sunshine += SUNSHINE_AMOUNT;
             }
         }
     }
@@ -617,7 +639,6 @@ void updateZombies() {
                     //game over ~~~
                     cout << "game over ~~~" << endl;
                     gameStatus[game_level].levelStatus = GameFailed;
-//                    exit(0);
                 }
             }
         }
