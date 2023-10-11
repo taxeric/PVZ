@@ -221,7 +221,7 @@ void gameInit() {
     curMovePlantPos = 0;
     gross_sunshine = 50;
 
-    gross_card_slot_space_x = (PLANTS_COUNT - 1) * SPACE_BETWEEN_CARD;
+//    gross_card_slot_space_x = (PLANTS_COUNT - 1) * SPACE_BETWEEN_CARD;
 
     LOGFONT f;
     gettextstyle(&f);
@@ -233,6 +233,26 @@ void gameInit() {
     setbkmode(TRANSPARENT);
     setcolor(BLACK);
 }
+
+/**
+ * 绘制卡槽
+ */
+ void drawCardSlot() {
+    //绘制卡槽
+    int space_x = 0;
+    for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i ++) {
+        long int x = CARD_START_X + i * BASE_CARD_WIDTH;
+        if (i > 0) {
+            space_x += SPACE_BETWEEN_CARD;
+            x += space_x;
+        }
+        if (card_slot_x_coordinate[i][0] <= 0 && card_slot_x_coordinate[i][1] <= 0) {
+            card_slot_x_coordinate[i][0] = x;
+            card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
+        }
+        putimage(x, CARD_START_Y, &imgGlobalCardsPics[gameStatus[game_level].choosePlants[i]->index]);
+    }
+ }
 
 /**
  * 绘制土地植物
@@ -313,21 +333,7 @@ void updateWindow() {
     putimage(CARD_SLOT_START_X, CARD_SLOT_START_Y, &imgBar);
     setbkcolor(TRANSPARENT);
 
-    //绘制卡槽
-    int space_x = 0;
-    for (int i = 0; i < PLANTS_COUNT; i ++) {
-        long int x = CARD_START_X + i * BASE_CARD_WIDTH;
-        if (i > 0) {
-            space_x += SPACE_BETWEEN_CARD;
-            x += space_x;
-        }
-        if (card_slot_x_coordinate[i][0] <= 0 && card_slot_x_coordinate[i][1] <= 0) {
-//            cout << "reset coordinate" << endl;
-            card_slot_x_coordinate[i][0] = x;
-            card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
-        }
-        putimage(x, CARD_START_Y, &imgGlobalCardsPics[i]);
-    }
+    drawCardSlot();
 
     //拖动绘制
     if (curMovePlantPos > 0) {
@@ -379,21 +385,22 @@ void collectSunshine(ExMessage* message) {
 void userClickEvent() {
     ExMessage message{};
     static int status = 0;
+    int choosePlantsCount = gameStatus[game_level].choosePlants.size();
     if (peekmessage(&message)) {
         if (message.message == WM_LBUTTONDOWN) {
             //鼠标按下事件
             //植物卡槽x范围
-            bool x_value = message.x > CARD_START_X && message.x < CARD_START_X + BASE_CARD_WIDTH * PLANTS_COUNT + gross_card_slot_space_x;
+            bool x_value = message.x > CARD_START_X && message.x < CARD_START_X + BASE_CARD_WIDTH * choosePlantsCount + gross_card_slot_space_x;
             //植物卡槽y范围
             bool y_value = message.y > CARD_START_Y && message.y < BASE_CARD_HEIGHT;
             if (x_value && y_value) {
-                for (int x_index = 0; x_index < PLANTS_COUNT; x_index ++) {
+                for (int x_index = 0; x_index < gameStatus[game_level].choosePlants.size(); x_index ++) {
                     if (message.x > card_slot_x_coordinate[x_index][0] && message.x < card_slot_x_coordinate[x_index][1]) {
 //                        cout << "valid click -> " << x_index << endl;
                         status = 1;
                         curMovePlantX = message.x;
                         curMovePlantY = message.y;
-                        curMovePlantPos = x_index + 1;
+                        curMovePlantPos = gameStatus[game_level].choosePlants[x_index]->index + 1;
                         break;
                     }
                 }
@@ -984,6 +991,8 @@ void viewScene() {
                         EndBatchDraw();
                         Sleep(1);
                     }
+                    //卡槽总空格
+                    gross_card_slot_space_x = (gameStatus[game_level].choosePlants.size() - 1) * SPACE_BETWEEN_CARD;
                     //移动到主屏幕
                     int count = 0;
                     for (int x = xMin; x <= -WIN_OFFSET; x += 1) {
@@ -1020,7 +1029,7 @@ void plantSlotDown() {
 
         //绘制卡槽
         int space_x = 0;
-        for (int i = 0; i < PLANTS_COUNT; i ++) {
+        for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i ++) {
             long int x = CARD_START_X + i * BASE_CARD_WIDTH;
             if (i > 0) {
                 space_x += SPACE_BETWEEN_CARD;
@@ -1030,7 +1039,7 @@ void plantSlotDown() {
                 card_slot_x_coordinate[i][0] = x;
                 card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
             }
-            putimage(x, y, &imgGlobalCardsPics[i]);
+            putimage(x, y, &imgGlobalCardsPics[gameStatus[game_level].choosePlants[i]->index]);
         }
 
         EndBatchDraw();
