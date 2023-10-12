@@ -487,10 +487,10 @@ void updatePlants() {
 
 void createSunshine() {
     static int count = 0;
-    static int fre = 80;
+    static int fre = 80;//自然掉落的阳光生成间隔
     count ++;
     if (count >= fre) {
-        fre = 200 + rand() % 20;
+        fre = 600 + rand() % 20;
         count = 0;
         int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
         int i;
@@ -515,7 +515,7 @@ void createSunshine() {
         for (int column = 0; column < LAND_MAP_COLUMN; column ++) {
             if (landMap[row][column].type - 1 == SUNFLOWER) {
                 landMap[row][column].timer ++;
-                if (landMap[row][column].timer > 200) {
+                if (landMap[row][column].timer > 600) {//向日葵生成的阳光间隔
                     landMap[row][column].timer = 0;
                     int k;
                     for (k = 0; k < sunshineBallMax && sunshineBalls[k].isUsed; k ++);
@@ -597,7 +597,7 @@ void createZombies() {
     count ++;
     if (count > zombieFre) {
         count = 0;
-        zombieFre = rand() % 200 + 300;
+        zombieFre = rand() % 200 + 600;
         int i;
         int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
         for (i = 0; i < zombieMax && zombies[i].isUsed; i ++);
