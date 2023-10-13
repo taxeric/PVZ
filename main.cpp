@@ -17,6 +17,7 @@
 #include "models/plants/Peashooter.h"
 #include "models/plants/RepeaterPea.h"
 #include "models/plants/PotatoMine.h"
+#include "models/plants/SnowPea.h"
 
 using namespace std;
 
@@ -101,7 +102,7 @@ struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
 struct SunshineBall sunshineBalls[10];
 //阳光图片
 IMAGE imgSunshineBallPics[BASE_RES_PICS_AMOUNT];
-//阳光总数
+//阳光总数(废弃, 使用GameStatus[game_level]->sunshine代替)
 int gross_sunshine;
 //阳光pic宽高
 int sunshinePicWidth, sunshinePicHeight;
@@ -126,10 +127,14 @@ IMAGE imgZombiesAttackPics1[AMOUNT_ZOMBIE_ATTACK_PIC_1];
 IMAGE imgZombiesDeadPics1[AMOUNT_ZOMBIE_DEAD_PIC_1];
 IMAGE imgZombiesDeadPics2[AMOUNT_ZOMBIE_DEAD_PIC_2];
 
-//子弹池
-struct Bullet bullets[30];
+//普通子弹池
+struct Bullet normalBullets[30];
+//寒冰子弹池
+struct Bullet snowBullets[30];
 //正常豌豆子弹
 IMAGE imgBulletNormal;
+//寒冰射手子弹
+IMAGE imgBulletSnow;
 //豌豆子弹碰撞后
 IMAGE imgBulletNormalExplode[4];
 
@@ -153,6 +158,7 @@ void gameInit() {
     globalPlantMap.insert(make_pair(SUNFLOWER, new Sunflower("", "", 0, SUNFLOWER)));
     globalPlantMap.insert(make_pair(PEASHOOT, new Peashooter("", "", 0, PEASHOOT)));
     globalPlantMap.insert(make_pair(POTATOMINE, new PotatoMine(POTATOMINE)));
+    globalPlantMap.insert(make_pair(SNOWPEA, new SnowPea(SNOWPEA)));
     globalPlantMap.insert(make_pair(REPEATERPEA, new RepeaterPea("", "", 0, REPEATERPEA)));
 
     game_level = 0;
@@ -160,7 +166,7 @@ void gameInit() {
     gameStatus[game_level].level = game_level + 1;
     gameStatus[game_level].killCount = 0;
     gameStatus[game_level].zombieMaxCount = 10;
-    gameStatus[game_level].sunshine = 50;
+    gameStatus[game_level].sunshine = 150;
     memset(gameStatus[game_level].choosePlantsIndex, -1, sizeof(gameStatus[game_level].choosePlantsIndex));
 
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
@@ -182,7 +188,8 @@ void gameInit() {
     loadimage(&imgGlobalCardsPics[2], RES_CARD_PIC_POTATOMINE, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 //    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 //    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_SNOWPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 
     //土地
     memset(landMap, 0, sizeof(landMap));
@@ -194,7 +201,8 @@ void gameInit() {
     loadPotatoMinePics(2, 12);
 //    loadJalapenoPics(7);
 //    loadChomperPics(12);
-    loadRepeatPeaShootPics(3, 14);
+    loadSnowPeaPics(3, 14);
+    loadRepeatPeaShootPics(4, 14);
 
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
@@ -204,8 +212,10 @@ void gameInit() {
     loadNormalZombieDiePics(AMOUNT_ZOMBIE_DEAD_PIC_2);
 
     //加载子弹数据
-    memset(bullets, 0, sizeof(bullets));
+    memset(normalBullets, 0, sizeof(normalBullets));
     loadimage(&imgBulletNormal, RES_PIC_BULLET_PEA_NORMAL);
+    memset(snowBullets, 0, sizeof(snowBullets));
+    loadimage(&imgBulletSnow, RES_PIC_BULLET_ICE);
     loadimage(&imgBulletNormalExplode[3], RES_PIC_BULLET_PEA_NORMAL_EXPLODE);
     for (int i = 0; i < 3; i ++) {
         float scale = (i + 1) * 0.2;
@@ -302,14 +312,25 @@ void drawZombies() {
  * 绘制子弹
  */
 void drawBullets() {
-    int bulletsMax = sizeof(bullets) / sizeof(bullets[0]);
-    for (int i = 0; i < bulletsMax; i ++) {
-        if (bullets[i].isUsed) {
-            if (bullets[i].explosion) {
-                IMAGE *img = &imgBulletNormalExplode[bullets[i].frameIndex];
-                putimagePng2(bullets[i].x, bullets[i].y, img);
+    int normalBulletsMax = sizeof(normalBullets) / sizeof(normalBullets[0]);
+    for (int i = 0; i < normalBulletsMax; i ++) {
+        if (normalBullets[i].isUsed) {
+            if (normalBullets[i].explosion) {
+                IMAGE *img = &imgBulletNormalExplode[normalBullets[i].frameIndex];
+                putimagePng2(normalBullets[i].x, normalBullets[i].y, img);
             } else {
-                putimagePng2(bullets[i].x, bullets[i].y, &imgBulletNormal);
+                putimagePng2(normalBullets[i].x, normalBullets[i].y, &imgBulletNormal);
+            }
+        }
+    }
+    int snowBulletsMax = sizeof(snowBullets) / sizeof(snowBullets[0]);
+    for (int i = 0; i < normalBulletsMax; i ++) {
+        if (snowBullets[i].isUsed) {
+            if (snowBullets[i].explosion) {
+                IMAGE *img = &imgBulletNormalExplode[snowBullets[i].frameIndex];
+                putimagePng2(snowBullets[i].x, snowBullets[i].y, img);
+            } else {
+                putimagePng2(snowBullets[i].x, snowBullets[i].y, &imgBulletSnow);
             }
         }
     }
@@ -377,9 +398,8 @@ void collectSunshine(ExMessage* message) {
                 sunshineBall->isUsed = false;
                 sunshineBall->status = SUNSHINE_COLLECT;
                 sunshineBall->speed = 1.0;
-                gross_sunshine += SUNSHINE_AMOUNT;
+//                gross_sunshine += SUNSHINE_AMOUNT;
                 gameStatus[game_level].sunshine += SUNSHINE_AMOUNT;
-//                cout << "sunshine amount = " << gross_sunshine << endl;
                 //设置偏移
                 float destX = CARD_SLOT_START_X;
                 float destY = CARD_SLOT_START_Y;
@@ -454,7 +474,10 @@ void userClickEvent() {
                         landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
                         landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
                         gameStatus[game_level].sunshine -= gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine;
-                        cout << "event: [up] (" << row << "," << column << ") plant index = " << landMap[row][column].type << endl;
+                        cout << "event: [plant] (" << row << "," << column << ") plant index = " << landMap[row][column].type
+                        << " need sunshine = " << gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine
+                        << " current sunshine = " << gameStatus[game_level].sunshine
+                        << endl;
                     }
                 }
                 status = 0;
@@ -673,7 +696,8 @@ void plantsShoot() {
     int lines[LAND_MAP_ROW] = {0};
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
     int dangerX = LAND_MAP_END_X - 80/* - imgZombiesPics[0].getwidth()*/;//手动减去僵尸png前方的占位透明像素
-    int bulletMax = sizeof(bullets) / sizeof(bullets[0]);
+    int normalBulletMax = sizeof(normalBullets) / sizeof(normalBullets[0]);
+    int snowBulletMax = sizeof(snowBullets) / sizeof(snowBullets[0]);
     for (int i = 0; i < zombieCount; i ++) {
         if (zombies[i].isUsed && zombies[i].x < dangerX) {
             lines[zombies[i].row] = 1;
@@ -692,19 +716,41 @@ void plantsShoot() {
                     count = 0;
                     int k;
                     //找到可用的子弹
-                    for (k = 0; k < bulletMax && bullets[k].isUsed; k ++);
-                    if (k < bulletMax) {
-                        bullets[k].isUsed = true;
-                        bullets[k].row = i;
-                        bullets[k].speed = 4;
+                    for (k = 0; k < normalBulletMax && normalBullets[k].isUsed; k ++);
+                    if (k < normalBulletMax) {
+                        normalBullets[k].isUsed = true;
+                        normalBullets[k].row = i;
+                        normalBullets[k].speed = 4;
 
-                        bullets[k].explosion = false;
-                        bullets[k].frameIndex = 0;
+                        normalBullets[k].explosion = false;
+                        normalBullets[k].frameIndex = 0;
 
                         int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
                         int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
-                        bullets[k].x = plantX + imgGlobalPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
-                        bullets[k].y = plantY + 5;
+                        normalBullets[k].x = plantX + imgGlobalPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
+                        normalBullets[k].y = plantY + 5;
+                    }
+                }
+            }
+            if (landMap[i][j].type - 1 == SNOWPEA && lines[i]) {
+                static int count = 0;
+                if (count > 120) {
+                    count = 0;
+                    int k;
+                    //找到可用的子弹
+                    for (k = 0; k < normalBulletMax && snowBullets[k].isUsed; k ++);
+                    if (k < normalBulletMax) {
+                        snowBullets[k].isUsed = true;
+                        snowBullets[k].row = i;
+                        snowBullets[k].speed = 4;
+
+                        snowBullets[k].explosion = false;
+                        snowBullets[k].frameIndex = 0;
+
+                        int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
+                        int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
+                        snowBullets[k].x = plantX + imgGlobalPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
+                        snowBullets[k].y = plantY + 5;
                     }
                 }
             }
@@ -713,17 +759,32 @@ void plantsShoot() {
 }
 
 void updateBullets() {
-    int countMax = sizeof(bullets) / sizeof(bullets[0]);
-    for (int i = 0; i < countMax; i ++) {
-        if (bullets[i].isUsed) {
-            bullets[i].x = bullets[i].x + bullets[i].speed;
-            if (bullets[i].x > LAND_MAP_END_X) {
-                bullets[i].isUsed = false;
+    int normalCountMax = sizeof(normalBullets) / sizeof(normalBullets[0]);
+    int snowCountMax = sizeof(snowBullets) / sizeof(snowBullets[0]);
+    for (int i = 0; i < normalCountMax; i ++) {
+        if (normalBullets[i].isUsed) {
+            normalBullets[i].x = normalBullets[i].x + normalBullets[i].speed;
+            if (normalBullets[i].x > LAND_MAP_END_X) {
+                normalBullets[i].isUsed = false;
             }
-            if (bullets[i].explosion) {
-                bullets[i].frameIndex ++;
-                if (bullets[i].frameIndex >= 4) {
-                    bullets[i].isUsed = false;
+            if (normalBullets[i].explosion) {
+                normalBullets[i].frameIndex ++;
+                if (normalBullets[i].frameIndex >= 4) {
+                    normalBullets[i].isUsed = false;
+                }
+            }
+        }
+    }
+    for (int i = 0; i < snowCountMax; i ++) {
+        if (snowBullets[i].isUsed) {
+            snowBullets[i].x = snowBullets[i].x + snowBullets[i].speed;
+            if (snowBullets[i].x > LAND_MAP_END_X) {
+                snowBullets[i].isUsed = false;
+            }
+            if (snowBullets[i].explosion) {
+                snowBullets[i].frameIndex ++;
+                if (snowBullets[i].frameIndex >= 4) {
+                    snowBullets[i].isUsed = false;
                 }
             }
         }
@@ -731,10 +792,11 @@ void updateBullets() {
 }
 
 void checkBullet2Zombie() {
-    int bulletCount = sizeof(bullets) / sizeof(bullets[0]);
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
-    for (int i = 0; i < bulletCount; i ++) {
-        if (!bullets[i].isUsed || bullets[i].explosion) {
+
+    int bulletNormalCount = sizeof(normalBullets) / sizeof(normalBullets[0]);
+    for (int i = 0; i < bulletNormalCount; i ++) {
+        if (!normalBullets[i].isUsed || normalBullets[i].explosion) {
             continue;
         }
         for (int k = 0; k < zombieCount; k ++) {
@@ -743,18 +805,45 @@ void checkBullet2Zombie() {
             }
             int zombieX1 = zombies[k].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
             int zombieX2 = zombies[k].x + 110;//僵尸图片实际需要碰撞的位置终点x, 因为图片尺寸需要手动加上偏移
-            int bulletX = bullets[i].x;
-            if (!zombies[k].dead && bulletX >= zombieX1 && bulletX <= zombieX2 && bullets[i].row == zombies[k].row) {
+            int bulletX = normalBullets[i].x;
+            if (!zombies[k].dead && bulletX >= zombieX1 && bulletX <= zombieX2 && normalBullets[i].row == zombies[k].row) {
                 zombies[k].hp -= 20;//默认伤害
-                bullets[i].explosion = true;
-                bullets[i].speed = 0;
+                normalBullets[i].explosion = true;
+                normalBullets[i].speed = 0;
                 if (zombies[k].hp <= 40 && zombies[k].hp > 0) {
                     zombies[k].lostHead = true;
                 } else if (zombies[k].hp <= 0) {
                     zombies[k].dead = true;
                     zombies[k].speed = 0;
                     zombies[k].frameIndex = 0;
-//                    zombies[k].isUsed = false;
+                }
+                break;
+            }
+        }
+    }
+
+    int bulletSnowCount = sizeof(snowBullets) / sizeof(snowBullets[0]);
+    for (int i = 0; i < bulletNormalCount; i ++) {
+        if (!snowBullets[i].isUsed || snowBullets[i].explosion) {
+            continue;
+        }
+        for (int k = 0; k < zombieCount; k ++) {
+            if (!zombies[k].isUsed) {
+                continue;
+            }
+            int zombieX1 = zombies[k].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
+            int zombieX2 = zombies[k].x + 110;//僵尸图片实际需要碰撞的位置终点x, 因为图片尺寸需要手动加上偏移
+            int bulletX = snowBullets[i].x;
+            if (!zombies[k].dead && bulletX >= zombieX1 && bulletX <= zombieX2 && snowBullets[i].row == zombies[k].row) {
+                zombies[k].hp -= 20;//默认伤害
+                snowBullets[i].explosion = true;
+                snowBullets[i].speed = 0;
+                if (zombies[k].hp <= 40 && zombies[k].hp > 0) {
+                    zombies[k].lostHead = true;
+                } else if (zombies[k].hp <= 0) {
+                    zombies[k].dead = true;
+                    zombies[k].speed = 0;
+                    zombies[k].frameIndex = 0;
                 }
                 break;
             }
@@ -923,11 +1012,12 @@ void viewScene() {
         if (startBtnFlag) {
             putimage(155, startBtnY1, &startBtn);
         }
-        //资源有限, 就手动存4个了先2333~~~
+        //资源有限, 就手动存5个了先2333~~~
         putimage(GAME_PLANT_CARD_SLOT_STORE_X, cardSlotStorePlantY, &imgGlobalCardsPics[0]);
         putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH, cardSlotStorePlantY, &imgGlobalCardsPics[1]);
         putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 2, cardSlotStorePlantY, &imgGlobalCardsPics[2]);
         putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 3, cardSlotStorePlantY, &imgGlobalCardsPics[3]);
+        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 4, cardSlotStorePlantY, &imgGlobalCardsPics[4]);
         for (int k = 0; k < 9; k ++) {
 //            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
             putimagePng2(
@@ -946,10 +1036,10 @@ void viewScene() {
         if (peekmessage(&msg)) {
             if (msg.message == WM_LBUTTONDOWN) {
                 //下面的卡槽仓库点击坐标
-                bool x_c_p_1 = msg.x > GAME_PLANT_CARD_SLOT_STORE_X && msg.x < CARD_SLOT_START_X + BASE_CARD_WIDTH * 5;
+                bool x_c_p_1 = msg.x > GAME_PLANT_CARD_SLOT_STORE_X && msg.x < GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 5;
                 bool y_c_p_1 = msg.y > cardSlotStorePlantY && msg.y < cardSlotStorePlantY + BASE_CARD_HEIGHT;
                 //上面的已选择的植物卡槽点击坐标
-                bool x_c_p_2 = msg.x > GAME_PLANT_CARD_SLOT_CHOICE_X && msg.x < CARD_SLOT_START_X + BASE_CARD_WIDTH * 5;
+                bool x_c_p_2 = msg.x > GAME_PLANT_CARD_SLOT_CHOICE_X && msg.x < GAME_PLANT_CARD_SLOT_CHOICE_X + BASE_CARD_WIDTH * gameStatus[game_level].choosePlants.size();
                 bool y_c_p_2 = msg.y > CARD_START_Y && msg.y < CARD_START_Y + BASE_CARD_HEIGHT;
                 if (x_c_p_1 && y_c_p_1) {
                     choosePlantFlag = true;
@@ -971,10 +1061,15 @@ void viewScene() {
                 }
             } else if (msg.message == WM_LBUTTONUP) {
                 if (removePlantFlag) {
-                    //获取对应已选择的植物卡槽的下标
-                    int x_index = (msg.x - GAME_PLANT_CARD_SLOT_STORE_X) / BASE_CARD_WIDTH;
-                    //移除
-                    gameStatus[game_level].choosePlants.erase(gameStatus[game_level].choosePlants.begin() + x_index - 1);
+                    if (!gameStatus[game_level].choosePlants.empty()) {
+                        //获取对应已选择的植物卡槽的下标
+                        int x_index = (msg.x - GAME_PLANT_CARD_SLOT_CHOICE_X) / BASE_CARD_WIDTH;
+                        //移除
+                        gameStatus[game_level].choosePlants.erase(
+                                gameStatus[game_level].choosePlants.begin() + x_index);
+                        cout << "event: [remove plant] (" << gameStatus[game_level].choosePlants.size()
+                             << ") plant index = " << x_index << endl;
+                    }
                     removePlantFlag = false;
                 }
                 if (choosePlantFlag) {
@@ -993,6 +1088,7 @@ void viewScene() {
                         //从全局map中获取对应植物
                         if (plantIte != globalPlantMap.end()) {
                             gameStatus[game_level].choosePlants.push_back(plantIte->second);
+                            cout << "event: [choose plant] (" << gameStatus[game_level].choosePlants.size() << ") plant index = " << plantIte->second->index << endl;
                         }
                     }
                     choosePlantFlag = false;
@@ -1200,6 +1296,19 @@ void loadRepeatPeaShootPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_REPEATERPEA_PATH, "RepeaterPea_", i);
+        if (fileExist(fname)) {
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadSnowPeaPics(int index, int size) {
+    char fname[64];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_SNOWPEA_PATH, "SnowPea_", i);
         if (fileExist(fname)) {
             imgGlobalPlantsPics[index][i] = new IMAGE;
             loadimage(imgGlobalPlantsPics[index][i], fname);
