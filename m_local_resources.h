@@ -22,6 +22,16 @@ enum {
     POTATOMINE,
 
     /**
+     * 寒冰射手
+     */
+    SNOWPEA,
+
+    /**
+     * 双发射手
+     */
+    REPEATERPEA,
+
+    /**
      * 火爆辣椒
      */
 //    JALAPENO,
@@ -30,11 +40,6 @@ enum {
      * 食人花
      */
 //    CHOMPER,
-
-    /**
-     * 双发射手
-     */
-    REPEATERPEA,
     PLANTS_COUNT,
 };
 
@@ -103,8 +108,12 @@ enum {
 #define RES_PIC_CHOMPER_DIGEST_PATH "../res/graphics/Plants/Chomper/ChomperDigest/"
 //双发射手卡槽
 #define RES_CARD_PIC_REPEATERPEA "../res/graphics/Cards/card_repeaterpea.png"
-//向日葵图片路径
+//双发射手图片路径
 #define RES_PIC_REPEATERPEA_PATH "../res/graphics/Plants/RepeaterPea/"
+//寒冰射手卡槽
+#define RES_CARD_PIC_SNOWPEA "../res/graphics/Cards/card_snowpea.png"
+//寒冰射手图片路径
+#define RES_PIC_SNOWPEA_PATH "../res/graphics/Plants/SnowPea/"
 
 //普通僵尸行走图片路径
 #define RES_PIC_NORMAL_ZOMBIE_WALK_PATH "../res/graphics/Zombies/NormalZombie/Zombie/"
@@ -123,6 +132,8 @@ enum {
 
 //正常豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL "../res/graphics/Bullets/PeaNormal/ProjectilePea.png"
+//寒冰射手子弹图片
+#define RES_PIC_BULLET_ICE "../res/graphics/Bullets/PeaNormal/ProjectileSnowPea.png"
 //碰撞僵尸后的豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL_EXPLODE "../res/graphics/Bullets/PeaNormalExplode/PeaNormalExplode_0.png"
 
@@ -137,7 +148,7 @@ void loadNormalZombieWalkPics(int size);
 /**
  * 普通僵尸站立
  */
- void loadNormalZombieStandPics(int size);
+void loadNormalZombieStandPics(int size);
 
 /**
  * 普通僵尸攻击
@@ -175,5 +186,6 @@ void loadPotatoMinePics(int index, int size);
 void loadJalapenoPics(int index, int size);
 void loadChomperPics(int index, int size);
 void loadRepeatPeaShootPics(int index, int size);
+void loadSnowPeaPics(int index, int size);
 
 #endif //PVZ_M_LOCAL_RESOURCES_H

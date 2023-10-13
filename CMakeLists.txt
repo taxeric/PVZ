@@ -26,4 +26,5 @@ add_executable(PVZ main.cpp
         models/plants/Peashooter.h
         models/plants/Sunflower.h
         models/plants/RepeaterPea.h
-        models/plants/PotatoMine.h)
+        models/plants/PotatoMine.h
+        models/plants/SnowPea.h)
