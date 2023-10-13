@@ -13,6 +13,8 @@ struct Zombie {
     int speed;
     int hp;
     bool eating;
+    bool freeze;
+    int freezeTimer;
     bool head;
     bool lostHead;
     bool dead;

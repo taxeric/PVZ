@@ -133,7 +133,7 @@ enum {
 //正常豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL "../res/graphics/Bullets/PeaNormal/ProjectilePea.png"
 //寒冰射手子弹图片
-#define RES_PIC_BULLET_ICE "../res/graphics/Bullets/PeaNormal/ProjectileSnowPea.png"
+#define RES_PIC_BULLET_ICE "../res/graphics/Bullets/PeaIce/ProjectileSnowPea.png"
 //碰撞僵尸后的豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL_EXPLODE "../res/graphics/Bullets/PeaNormalExplode/PeaNormalExplode_0.png"
 
