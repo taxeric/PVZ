@@ -474,7 +474,7 @@ void userClickEvent() {
                         landMap[row][column].type = curMovePlantPos;
                         landMap[row][column].frameIndex = 0;
                         landMap[row][column].caught = false;
-                        landMap[row][column].deadTime = 0;
+//                        landMap[row][column].deadTime = 0;
                         landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
                         landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
                         gameStatus[game_level].sunshine -= gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine;
@@ -915,9 +915,10 @@ void checkZombie2Plant() {
                             if (count > 20) {//越大切换图片越慢
                                 count = 0;
                                 zombies[i].frameIndex ++;
-                                landMap[row][column].deadTime ++;
+                                gameStatus[game_level].choosePlants[landMap[row][column].type - 1]->hp --;
+//                                landMap[row][column].deadTime ++;
                             }
-                            if (landMap[row][column].deadTime >= 100) {
+                            if (gameStatus[game_level].choosePlants[landMap[row][column].type - 1]->hp <= 0) {
                                 for (int m = 0; m < zombieCount; m ++) {
                                     if (zombies[m].attackRow == row && zombies[m].attackColumn == column) {
                                         zombies[m].attackRow = -1;
@@ -927,7 +928,8 @@ void checkZombie2Plant() {
                                         zombies[m].frameIndex = rand() % BASE_RES_PICS_AMOUNT;
                                     }
                                 }
-                                landMap[row][column].deadTime = 0;
+//                                landMap[row][column].deadTime = 0;
+                                gameStatus[game_level].choosePlants[landMap[row][column].type - 1]->hp = 100;
                                 landMap[row][column].caught = false;
                                 landMap[row][column].type = 0;
                             } else {
