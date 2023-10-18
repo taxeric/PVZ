@@ -89,14 +89,20 @@ enum {
 
 //向日葵卡槽
 #define RES_CARD_PIC_SUNFLOWER "../res/graphics/Cards/card_sunflower.png"
+//向日葵正在冷却卡槽
+#define RES_CARD_PIC_SUNFLOWER_CD "../res/graphics/Cards/NoColor/card_sunflower_m.png"
 //向日葵图片路径
 #define RES_PIC_SUNFLOWER_PATH "../res/graphics/Plants/SunFlower/"
 //豌豆射手卡槽
 #define RES_CARD_PIC_PEASHOOTER "../res/graphics/Cards/card_peashooter.png"
+//豌豆射手正在冷却卡槽
+#define RES_CARD_PIC_PEASHOOTER_CD "../res/graphics/Cards/NoColor/card_peashooter_m.png"
 //豌豆射手图片路径
 #define RES_PIC_PEASHOOTER_PATH "../res/graphics/Plants/Peashooter/"
 //土豆地雷卡槽
 #define RES_CARD_PIC_POTATOMINE "../res/graphics/Cards/card_potatomine.png"
+//土豆地雷正在冷却卡槽
+#define RES_CARD_PIC_POTATOMINE_CD "../res/graphics/Cards/NoColor/card_potatomine_m.png"
 //土豆地雷idle图片路径
 #define RES_PIC_POTATOMINE_PATH "../res/graphics/Plants/PotatoMine/PotatoMine/"
 //土豆地雷init图片
@@ -123,10 +129,14 @@ enum {
 #define RES_PIC_REPEATERPEA_PATH "../res/graphics/Plants/RepeaterPea/"
 //寒冰射手卡槽
 #define RES_CARD_PIC_SNOWPEA "../res/graphics/Cards/card_snowpea.png"
+//寒冰射手正在冷却卡槽
+#define RES_CARD_PIC_SNOWPEA_CD "../res/graphics/Cards/NoColor/card_snowpea_m.png"
 //寒冰射手图片路径
 #define RES_PIC_SNOWPEA_PATH "../res/graphics/Plants/SnowPea/"
 //坚果墙卡槽
 #define RES_CARD_PIC_WALLNUT "../res/graphics/Cards/card_wallnut.png"
+//向日葵正在冷却卡槽
+#define RES_CARD_PIC_WALLNUT_CD "../res/graphics/Cards/NoColor/card_wallnut_m.png"
 //坚果墙未受损路径
 #define RES_PIC_WALLNUT_DAMAGE_LV0_PATH "../res/graphics/Plants/WallNut/WallNut/"
 //坚果墙受损一级路径

@@ -117,6 +117,8 @@ IMAGE imgBar;
 IMAGE imgChoosePlants;
 //全局植物卡槽图片, 游戏内的植物卡槽图片都通过它获取
 IMAGE imgGlobalCardsPics[PLANTS_COUNT];
+//黑白化
+IMAGE imgGlobalCardsNoColorPics[PLANTS_COUNT];
 //全局植物图片, 游戏内的植物动图都通过它获取(如有不同形态,则在本身图片下标位置加上形态数量)
 IMAGE* imgGlobalPlantsPics[PLANTS_COUNT + 2][BASE_RES_PICS_AMOUNT];
 
@@ -225,11 +227,14 @@ void gameInit() {
     loadimage(&imgGlobalCardsPics[0], RES_CARD_PIC_SUNFLOWER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
     loadimage(&imgGlobalCardsPics[1], RES_CARD_PIC_PEASHOOTER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
     loadimage(&imgGlobalCardsPics[2], RES_CARD_PIC_POTATOMINE, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-//    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-//    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
     loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_SNOWPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
     loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_WALLNUT, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    //    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+
+    loadimage(&imgGlobalCardsNoColorPics[0], RES_CARD_PIC_SUNFLOWER_CD, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsNoColorPics[1], RES_CARD_PIC_PEASHOOTER_CD, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsNoColorPics[2], RES_CARD_PIC_POTATOMINE_CD, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsNoColorPics[3], RES_CARD_PIC_SNOWPEA_CD, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsNoColorPics[4], RES_CARD_PIC_WALLNUT_CD, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 
     //土地
     memset(landMap, 0, sizeof(landMap));
@@ -268,12 +273,12 @@ void gameInit() {
                 imgBulletNormalExplode[3].getwidth() * scale,
                 imgBulletNormalExplode[3].getheight() * scale,
                 true
-                );
+        );
     }
 
     //杂项
     loadimage(&imgPotatoMineLoading, RES_PIC_POTATOMINE_INIT);
-    loadimage(&imgPotatoMineExplode, RES_PIC_POTATOMINE_BOOM, LAND_MAP_SINGLE_WIDTH, LAND_MAP_SINGLE_HEIGHT);
+    loadimage(&imgPotatoMineExplode, RES_PIC_POTATOMINE_BOOM, LAND_MAP_SINGLE_HEIGHT, LAND_MAP_SINGLE_HEIGHT);
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -311,7 +316,14 @@ void drawCardSlot() {
             card_slot_x_coordinate[i][0] = x;
             card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
         }
-        putimage(x, CARD_START_Y, &imgGlobalCardsPics[gameStatus[game_level].choosePlants[i]->index]);
+        IMAGE* img;
+        Plant* cardSlotPlant = gameStatus[game_level].choosePlants[i];
+        if (cardSlotPlant->cd <= 0) {
+            img = &imgGlobalCardsPics[cardSlotPlant->index];
+        } else {
+            img = &imgGlobalCardsNoColorPics[cardSlotPlant->index];
+        }
+        putimage(x, CARD_START_Y, img);
     }
 }
 
@@ -341,7 +353,7 @@ void drawPlants() {
                             }
                         }
                     }
-                    break;
+                        break;
                     case WALLNUT:
                     {
                         auto* wallNut = dynamic_cast<WallNut*>(landMap[row][column].plant);
@@ -353,7 +365,7 @@ void drawPlants() {
                             putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
                         }
                     }
-                    break;
+                        break;
                     default:
                         putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
                         break;
@@ -430,11 +442,11 @@ void drawSunshineBalls() {
 /**
  * 绘制阳光数量
  */
- void drawSunshineScore() {
+void drawSunshineScore() {
     char scoreText[8];
     sprintf_s(scoreText, sizeof(scoreText), "%d", gameStatus[game_level].sunshine);
     outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
- }
+}
 
 void updateWindow() {
     //缓冲
@@ -510,19 +522,23 @@ void userClickEvent() {
                     int sunshine = gameStatus[game_level].sunshine;
                     //检查是否点击了占位
                     if (message.x > card_slot_x_coordinate[x_index][0] && message.x < card_slot_x_coordinate[x_index][1]) {
-                        //检查阳光
-                        if (sunshine >= plant->sunshine) {
-                            status = 1;
-                            curMovePlantX = message.x;
-                            curMovePlantY = message.y;
-                            curMovePlantPos = plant->index + 1;
-                            curMovePlantCardSlotIndex = x_index;
-                            if (getcolor() != BLACK) {
-                                setcolor(BLACK);
-                                drawSunshineScore();
-                            }
+                        if (plant->cd > 0) {
+                            playSounds(SOUND_WAITING_CD);
                         } else {
-                            setcolor(RED);
+                            //检查阳光
+                            if (sunshine >= plant->sunshine) {
+                                status = 1;
+                                curMovePlantX = message.x;
+                                curMovePlantY = message.y;
+                                curMovePlantPos = plant->index + 1;
+                                curMovePlantCardSlotIndex = x_index;
+                                if (getcolor() != BLACK) {
+                                    setcolor(BLACK);
+                                    drawSunshineScore();
+                                }
+                            } else {
+                                setcolor(RED);
+                            }
                         }
                         break;
                     }
@@ -556,16 +572,17 @@ void userClickEvent() {
                         land->plant = generatePlantByType(
                                 gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex],
                                 curMovePlantPos - 1
-                                );
+                        );
                         if (land->plant != nullptr) {
                             land->plant->row = row;
                             land->plant->column = column;
                         }
                         gameStatus[game_level].sunshine -= gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine;
+                        gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->cd ++;
                         cout << "event: [plant] (x,y) -> (" << land->plant->row << "," << land->plant->column << "); plant index = " << land->type
-                        << "; need sunshine = " << gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine
-                        << "; current sunshine = " << gameStatus[game_level].sunshine
-                        << endl;
+                             << "; need sunshine = " << gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine
+                             << "; current sunshine = " << gameStatus[game_level].sunshine
+                             << endl;
                         int rm = rand() % 2;
                         playSounds(rm == 0 ? SOUND_PLANT_1 : SOUND_PLANT_2);
                     }
@@ -573,6 +590,25 @@ void userClickEvent() {
                 status = 0;
                 curMovePlantPos = 0;
                 curMovePlantCardSlotIndex = -1;
+            }
+        }
+    }
+}
+
+void updatePlantsCD() {
+    static int timer = 0;
+    timer ++;
+    if (timer > 5) {
+        timer = 0;
+        for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i++) {
+            Plant *cardSlotPlant = gameStatus[game_level].choosePlants[i];
+            if (cardSlotPlant->cd > 0) {
+                if (cardSlotPlant->cd == cardSlotPlant->getCoolDown()) {
+                    cardSlotPlant->cd = 0;
+                } else {
+                    cardSlotPlant->cd++;
+                    Sleep(5);
+                }
             }
         }
     }
@@ -1128,6 +1164,8 @@ void collisionCheck() {
 
 void updateGame() {
 
+    updatePlantsCD();
+
     updatePlants();
 
     createSunshine();
@@ -1200,7 +1238,7 @@ void viewScene() {
                     zombiesStandCoordinate[k][0] - xMin + x,
                     zombiesStandCoordinate[k][1],
                     &imgZombiesStandPics[0]
-                    );
+            );
         }
         EndBatchDraw();
         Sleep(5);
@@ -1623,8 +1661,8 @@ void loadZombieBoomDiePics(int size) {
 }
 
 void playSounds(const char* path) {
-     char play[64] = "play ";
-     char* result = strcat(play, path);
+    char play[64] = "play ";
+    char* result = strcat(play, path);
     int ret = mciSendString(result, 0, 0, 0);
     cout << "event: [play] - " << result << " ret -> " << ret << endl;
- }
+}
