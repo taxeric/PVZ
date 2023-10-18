@@ -94,6 +94,10 @@ enum {
 #define RES_CARD_PIC_POTATOMINE "../res/graphics/Cards/card_potatomine.png"
 //土豆地雷idle图片路径
 #define RES_PIC_POTATOMINE_PATH "../res/graphics/Plants/PotatoMine/PotatoMine/"
+//土豆地雷init图片
+#define RES_PIC_POTATOMINE_INIT "../res/graphics/Plants/PotatoMine/PotatoMineInit/PotatoMineInit_0.png"
+//土豆地雷boom图片
+#define RES_PIC_POTATOMINE_BOOM "../res/graphics/Plants/PotatoMine/PotatoMineExplode/PotatoMineExplode_0.png"
 //火爆辣椒卡槽
 #define RES_CARD_PIC_JALAPENO "../res/graphics/Cards/card_jalapeno.png"
 //火爆辣椒放置图片路径
@@ -165,6 +169,8 @@ enum {
 #define SOUND_FROZEN "../res/sounds/frozen.mp3"
 //来一大口?
 #define SOUND_GULP "../res/sounds/gulp.mp3"
+//土豆地雷boom
+#define SOUND_POTATO_BOOM "../res/sounds/potato_mine.mp3"
 //正在冷却(蜂鸣器)
 #define SOUND_WAITING_CD "../res/sounds/buzzer.mp3"
 //win!
