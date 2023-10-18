@@ -73,7 +73,7 @@ using namespace std;
 //僵尸站立图片数量
 #define AMOUNT_ZOMBIE_STAND_PIC_1 5
 //僵尸攻击图片数量
-#define AMOUNT_ZOMBIE_ATTACK_PIC_1 20
+#define AMOUNT_ZOMBIE_ATTACK_PIC_1 21
 //僵尸死亡图片数量
 #define AMOUNT_ZOMBIE_DEAD_PIC_1 17
 #define AMOUNT_ZOMBIE_DEAD_PIC_2 9
@@ -143,6 +143,10 @@ IMAGE imgBulletNormal;
 IMAGE imgBulletSnow;
 //豌豆子弹碰撞后
 IMAGE imgBulletNormalExplode[4];
+//土豆地雷loading
+IMAGE imgPotatoMineLoading;
+//土豆地雷boom
+IMAGE imgPotatoMineExplode;
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -154,6 +158,32 @@ int getDelay() {
     int ret = curTime - lastTime;
     lastTime = curTime;
     return ret;
+}
+
+Plant* generatePlantByType(Plant* choicePlantFromCardSlot, int type) {
+    if (choicePlantFromCardSlot == nullptr) {
+        return nullptr;
+    }
+    Plant* plant = nullptr;
+    switch (type) {
+        case 0: plant = new Sunflower(choicePlantFromCardSlot); break;
+        case 1: plant = new Peashooter(choicePlantFromCardSlot); break;
+        case 2: plant = new PotatoMine(choicePlantFromCardSlot); break;
+        case 3: plant = new SnowPea(choicePlantFromCardSlot); break;
+        case 4: plant = new RepeaterPea(choicePlantFromCardSlot); break;
+        default:break;
+    }
+    return plant;
+}
+
+void clearPlantPointer(int row, int column) {
+    if (row >= LAND_MAP_ROW || row < 0 || column >= LAND_MAP_COLUMN || column < 0) {
+        return;
+    }
+    if (landMap[row][column].plant != nullptr) {
+        delete landMap[row][column].plant;
+        landMap[row][column].plant = nullptr;
+    }
 }
 
 void gameInit() {
@@ -234,6 +264,10 @@ void gameInit() {
                 );
     }
 
+    //杂项
+    loadimage(&imgPotatoMineLoading, RES_PIC_POTATOMINE_INIT);
+    loadimage(&imgPotatoMineExplode, RES_PIC_POTATOMINE_BOOM);
+
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
     curMovePlantPos = 0;
@@ -278,15 +312,28 @@ void gameInit() {
  * 绘制土地植物
  */
 void drawPlants() {
-    for (int i = 0; i < LAND_MAP_ROW; i ++) {
-        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
-            if (landMap[i][j].type > 0) {
+    for (int row = 0; row < LAND_MAP_ROW; row ++) {
+        for (int column = 0; column < LAND_MAP_COLUMN; column ++) {
+            if (landMap[row][column].type > 0) {
                 //获取当前选择的植物下标
-                int curPlantIndex = landMap[i][j].type - 1;
-                IMAGE* img = imgGlobalPlantsPics[curPlantIndex][landMap[i][j].frameIndex];
-                int x = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
-                int y = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
-                putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[i][j].frameIndex]);
+                int curPlantIndex = landMap[row][column].type - 1;
+                IMAGE* img = imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex];
+                int x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
+                int y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
+                if (landMap[row][column].type - 1 == POTATOMINE) {
+                    PotatoMine* potatoMine = dynamic_cast<PotatoMine*>(landMap[row][column].plant);
+                    if (potatoMine->loading) {
+                        putimagePng2(x, y, &imgPotatoMineLoading);
+                    } else {
+                        if (potatoMine->explode) {
+                            putimagePng2(x, y, &imgPotatoMineExplode);
+                        } else {
+                            putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
+                        }
+                    }
+                } else {
+                    putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
+                }
             }
         }
     }
@@ -474,18 +521,26 @@ void userClickEvent() {
                 if (x_value && y_value) {
                     int row = (message.y - LAND_MAP_START_Y) / LAND_MAP_SINGLE_HEIGHT;
                     int column = (message.x - LAND_MAP_START_X) / LAND_MAP_SINGLE_WIDTH;
-                    if (landMap[row][column].type <= 0) {
-                        landMap[row][column].type = curMovePlantPos;
-                        landMap[row][column].frameIndex = 0;
-                        landMap[row][column].caught = false;
-//                        landMap[row][column].deadTime = 0;
-                        landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
-                        landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
-                        landMap[row][column].hp = gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->hp;
+                    struct Land* land = &landMap[row][column];
+                    if (land->type <= 0) {
+                        land->type = curMovePlantPos;
+                        land->frameIndex = 0;
+                        land->caught = false;
+                        land->x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
+                        land->y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
+                        land->hp = gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->hp;
+                        land->plant = generatePlantByType(
+                                gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex],
+                                curMovePlantPos - 1
+                                );
+                        if (land->plant != nullptr) {
+                            land->plant->row = row;
+                            land->plant->column = column;
+                        }
                         gameStatus[game_level].sunshine -= gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine;
-                        cout << "event: [plant] (" << row << "," << column << ") plant index = " << landMap[row][column].type
-                        << " need sunshine = " << gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine
-                        << " current sunshine = " << gameStatus[game_level].sunshine
+                        cout << "event: [plant] (x,y) -> (" << land->plant->row << "," << land->plant->column << "); plant index = " << land->type
+                        << "; need sunshine = " << gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine
+                        << "; current sunshine = " << gameStatus[game_level].sunshine
                         << endl;
                         int rm = rand() % 2;
                         playSounds(rm == 0 ? SOUND_PLANT_1 : SOUND_PLANT_2);
@@ -574,8 +629,8 @@ void createSunshine() {
 void updateSunshine() {
     int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < ballMax; i ++) {
+        struct SunshineBall* sunshineBall = &sunshineBalls[i];
         if (sunshineBalls[i].isUsed) {
-            struct SunshineBall* sunshineBall = &sunshineBalls[i];
             sunshineBall->frameIndex = (sunshineBalls[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
             int status = sunshineBall->status;
             if (status == SUNSHINE_DOWN) {
@@ -603,19 +658,19 @@ void updateSunshine() {
                     sunshineBall->timer = 0;
                 }
             }
-        } else if (sunshineBalls[i].xOffset > 0) {
+        } else if (sunshineBall->xOffset > 0) {
             //设置偏移
             float destX = CARD_SLOT_START_X;
             float destY = CARD_SLOT_START_Y;
-            float angle = atan(((float) sunshineBalls[i].y - destY) / ((float) sunshineBalls[i].x - destX));
-            sunshineBalls[i].xOffset = SUNSHINE_FLY_PIXEL * cos(angle);
-            sunshineBalls[i].yOffset = SUNSHINE_FLY_PIXEL * sin(angle);
+            float angle = atan(((float) sunshineBall->y - destY) / ((float) sunshineBall->x - destX));
+            sunshineBall->xOffset = SUNSHINE_FLY_PIXEL * cos(angle);
+            sunshineBall->yOffset = SUNSHINE_FLY_PIXEL * sin(angle);
 
-            sunshineBalls[i].x -= sunshineBalls[i].xOffset;
-            sunshineBalls[i].y -= sunshineBalls[i].yOffset;
-            if (sunshineBalls[i].x <= CARD_SLOT_START_X || sunshineBalls[i].y <= CARD_SLOT_START_Y) {
-                sunshineBalls[i].xOffset = 0;
-                sunshineBalls[i].yOffset = 0;
+            sunshineBall->x -= sunshineBall->xOffset;
+            sunshineBall->y -= sunshineBall->yOffset;
+            if (sunshineBall->x <= CARD_SLOT_START_X || sunshineBall->y <= CARD_SLOT_START_Y) {
+                sunshineBall->xOffset = 0;
+                sunshineBall->yOffset = 0;
             }
         }
     }
@@ -752,12 +807,12 @@ void plantsShoot() {
         }
     }
 
-    for (int i = 0; i < LAND_MAP_ROW; i ++) {
-        for (int j = 0; j < LAND_MAP_COLUMN; j ++) {
-            if (landMap[i][j].type == 0) {
+    for (int row = 0; row < LAND_MAP_ROW; row ++) {
+        for (int column = 0; column < LAND_MAP_COLUMN; column ++) {
+            if (landMap[row][column].type == 0) {
                 continue;
             }
-            if (landMap[i][j].type - 1 == PEASHOOT && lines[i]) {
+            if (landMap[row][column].type - 1 == PEASHOOT && lines[row]) {
                 static int count = 0;
                 count ++;
                 if (count > 120) {//越大子弹间隔越大
@@ -767,20 +822,20 @@ void plantsShoot() {
                     for (k = 0; k < normalBulletMax && normalBullets[k].isUsed; k ++);
                     if (k < normalBulletMax) {
                         normalBullets[k].isUsed = true;
-                        normalBullets[k].row = i;
+                        normalBullets[k].row = row;
                         normalBullets[k].speed = 4;
 
                         normalBullets[k].explosion = false;
                         normalBullets[k].frameIndex = 0;
 
-                        int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
-                        int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
-                        normalBullets[k].x = plantX + imgGlobalPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
+                        int plantX = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
+                        int plantY = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
+                        normalBullets[k].x = plantX + imgGlobalPlantsPics[landMap[row][column].type - 1][0]->getwidth() - 10;
                         normalBullets[k].y = plantY + 5;
                     }
                 }
             }
-            if (landMap[i][j].type - 1 == SNOWPEA && lines[i]) {
+            if (landMap[row][column].type - 1 == SNOWPEA && lines[row]) {
                 static int count = 0;
                 count ++;
                 if (count > 120) {
@@ -790,15 +845,15 @@ void plantsShoot() {
                     for (k = 0; k < normalBulletMax && snowBullets[k].isUsed; k ++);
                     if (k < normalBulletMax) {
                         snowBullets[k].isUsed = true;
-                        snowBullets[k].row = i;
+                        snowBullets[k].row = row;
                         snowBullets[k].speed = 4;
 
                         snowBullets[k].explosion = false;
                         snowBullets[k].frameIndex = 0;
 
-                        int plantX = LAND_MAP_START_X + j * LAND_MAP_SINGLE_WIDTH;
-                        int plantY = LAND_MAP_START_Y + i * LAND_MAP_SINGLE_HEIGHT;
-                        snowBullets[k].x = plantX + imgGlobalPlantsPics[landMap[i][j].type - 1][0]->getwidth() - 10;
+                        int plantX = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
+                        int plantY = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
+                        snowBullets[k].x = plantX + imgGlobalPlantsPics[landMap[row][column].type - 1][0]->getwidth() - 10;
                         snowBullets[k].y = plantY + 5;
                     }
                 }
@@ -944,6 +999,7 @@ void checkZombie2Plant() {
                                 landMap[row][column].hp = 0;
                                 landMap[row][column].caught = false;
                                 landMap[row][column].type = 0;
+                                clearPlantPointer(row, column);
                             } else {
                                 if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_ATTACK_PIC_1) {
                                     zombies[i].frameIndex = 0;
@@ -965,11 +1021,55 @@ void checkZombie2Plant() {
     }
 }
 
+void potatoMineBoom() {
+    int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
+    for (int row = 0; row < LAND_MAP_ROW; row ++) {
+        for (int column = 0; column < LAND_MAP_COLUMN; column++) {
+            if (landMap[row][column].type - 1 == POTATOMINE) {
+                auto* potatoMine = dynamic_cast<PotatoMine*>(landMap[row][column].plant);
+                if (potatoMine->loading) {
+                    potatoMine->loadTimer ++;
+                    if (potatoMine->loadTimer >= 1000) {
+                        potatoMine->loading = false;//装填完毕
+                        landMap[row][column].frameIndex = 0;
+                    }
+                } else {
+                    for (int i = 0; i < zombieMax; i ++) {
+                        if (zombies[i].isUsed && zombies[i].row == row) {
+                            //植物所占像素值范围
+                            int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
+                            int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
+                            int zombieX = zombies[i].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
+                            if (zombieX >= plantX1 && zombieX <= plantX2) {
+                                potatoMine->explode = true;
+                                zombies[i].dead = true;
+                                zombies[i].hp = 0;
+                                zombies[i].speed = 0;
+                                zombies[i].frameIndex = 0;
+                                playSounds(SOUND_POTATO_BOOM);
+                                if (potatoMine->explodeTimer < 10) {
+                                    potatoMine->explodeTimer ++;
+                                } else {
+                                    landMap[row][column].type = 0;
+                                    landMap[row][column].hp = 0;
+                                    clearPlantPointer(row, column);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void collisionCheck() {
     //子弹碰撞僵尸
     checkBullet2Zombie();
     //僵尸攻击植物
     checkZombie2Plant();
+    //土豆地雷explosion
+    potatoMineBoom();
 }
 
 void updateGame() {

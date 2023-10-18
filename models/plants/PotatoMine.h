@@ -9,6 +9,27 @@
 
 class PotatoMine: public Plant {
 public:
+
+    /**
+     * 是否装填
+     */
+    bool loading = true;
+
+    /**
+     * 装填计次
+     */
+    int loadTimer = 0;
+
+    /**
+     * 是否爆炸
+     */
+    bool explode = false;
+
+    /**
+     * 爆炸计次
+     */
+    int explodeTimer = 0;
+
     PotatoMine(int index) {
         this->setName("土豆地雷");
         this->cd = 20;
@@ -27,6 +48,8 @@ public:
         sunshine = temp->sunshine;
         actionPicCount = temp->actionPicCount;
         setName(temp->getName());
+        loading = true;
+        loadTimer = 0;
         std::cout << "event: [new] " << temp->getName() << std::endl;
     }
 

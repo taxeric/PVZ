@@ -30,5 +30,6 @@ void Plant::setActionPath(const std::string &path) {
 
 Plant::~Plant() {
     auto plantName = Plant::name.empty() ? "unknown" : Plant::name;
-    std::cout << "event: [del] [" << Plant::index << "] [" << plantName << "]" << std::endl;
+    std::cout << "event: [del] [" << Plant::index << "] [" << plantName << "] ("
+    << Plant::row << "," << Plant::column << ")" << std::endl;
 }
