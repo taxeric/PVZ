@@ -27,9 +27,15 @@ enum {
     SNOWPEA,
 
     /**
+     * 坚果墙
+     */
+    WALLNUT,
+    PLANTS_COUNT,
+
+    /**
      * 双发射手
      */
-    REPEATERPEA,
+//    REPEATERPEA,
 
     /**
      * 火爆辣椒
@@ -40,7 +46,6 @@ enum {
      * 食人花
      */
 //    CHOMPER,
-    PLANTS_COUNT,
 };
 
 enum {
@@ -120,6 +125,14 @@ enum {
 #define RES_CARD_PIC_SNOWPEA "../res/graphics/Cards/card_snowpea.png"
 //寒冰射手图片路径
 #define RES_PIC_SNOWPEA_PATH "../res/graphics/Plants/SnowPea/"
+//坚果墙卡槽
+#define RES_CARD_PIC_WALLNUT "../res/graphics/Cards/card_wallnut.png"
+//坚果墙未受损路径
+#define RES_PIC_WALLNUT_DAMAGE_LV0_PATH "../res/graphics/Plants/WallNut/WallNut/"
+//坚果墙受损一级路径
+#define RES_PIC_WALLNUT_DAMAGE_LV1_PATH "../res/graphics/Plants/WallNut/WallNut_cracked1/"
+//坚果墙受损二级路径
+#define RES_PIC_WALLNUT_DAMAGE_LV2_PATH "../res/graphics/Plants/WallNut/WallNut_cracked2/"
 
 //普通僵尸行走图片路径
 #define RES_PIC_NORMAL_ZOMBIE_WALK_PATH "../res/graphics/Zombies/NormalZombie/Zombie/"
@@ -231,5 +244,8 @@ void loadJalapenoPics(int index, int size);
 void loadChomperPics(int index, int size);
 void loadRepeatPeaShootPics(int index, int size);
 void loadSnowPeaPics(int index, int size);
+void loadWallNutPics(int index, int size);
+void loadWallNutD1Pics(int index, int size);
+void loadWallNutD2Pics(int index, int size);
 
 #endif //PVZ_M_LOCAL_RESOURCES_H
