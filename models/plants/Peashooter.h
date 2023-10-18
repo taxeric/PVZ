@@ -14,8 +14,9 @@ public:
         this->setName("豌豆射手");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
+        this->setCoolDown(200);
         this->index = index;
-        this->cd = 10;
+        this->cd = 0;
         this->hp = 100;
         this->sunshine = 100;
         this->actionPicCount = actionPicCount;
@@ -24,13 +25,14 @@ public:
     explicit Peashooter(Plant *plant) {
         auto* temp = dynamic_cast<Peashooter*>(plant);
         index = temp->index;
-        cd = temp->cd;
-        hp = temp->hp;
+        cd = 0;
+        hp = 100;
         row = temp->row;
         column = temp->column;
         sunshine = temp->sunshine;
         actionPicCount = temp->actionPicCount;
         setName(temp->getName());
+        setCoolDown(temp->getCoolDown());
         std::cout << "event: [new] " << temp->getName() << std::endl;
     }
 

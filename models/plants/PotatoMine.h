@@ -32,7 +32,8 @@ public:
 
     PotatoMine(int index) {
         this->setName("土豆地雷");
-        this->cd = 20;
+        this->setCoolDown(250);
+        this->cd = 0;
         this->hp = 100;
         this->sunshine = 25;
         this->index = index;
@@ -41,13 +42,14 @@ public:
     explicit PotatoMine(Plant *plant) {
         auto* temp = dynamic_cast<PotatoMine*>(plant);
         index = temp->index;
-        cd = temp->cd;
-        hp = temp->hp;
+        cd = 0;
+        hp = 100;
         row = temp->row;
         column = temp->column;
         sunshine = temp->sunshine;
         actionPicCount = temp->actionPicCount;
         setName(temp->getName());
+        setCoolDown(temp->getCoolDown());
         loading = true;
         loadTimer = 0;
         std::cout << "event: [new] " << temp->getName() << std::endl;

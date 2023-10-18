@@ -33,3 +33,11 @@ Plant::~Plant() {
     std::cout << "event: [del] [" << Plant::index << "] [" << plantName << "] ("
     << Plant::row << "," << Plant::column << ")" << std::endl;
 }
+
+void Plant::setCoolDown(int coolDown) {
+    Plant::coolDown = coolDown;
+}
+
+int Plant::getCoolDown() const {
+    return coolDown;
+}

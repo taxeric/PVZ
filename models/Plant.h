@@ -12,6 +12,7 @@ private:
     std::string name;
     std::string cardPath;
     std::string actionPath;
+    int coolDown;
 
 public:
     /**
@@ -37,6 +38,14 @@ public:
     const std::string &getActionPath() const;
 
     void setActionPath(const std::string &path);
+
+    int getCoolDown() const;
+
+    /**
+     * 该set方法只在子类内部调用
+     * @param coolDown
+     */
+    void setCoolDown(int coolDown);
 
     virtual void loadCardPic() = 0;
     virtual void loadActionPics() = 0;
