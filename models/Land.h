@@ -13,8 +13,8 @@ struct Land{
     int frameIndex;
     //植物是否被捕获
     bool caught;
-    //植物死亡计数
-    int deadTime;
+    //植物hp
+    int hp;
 
     //block定时器
     int timer;

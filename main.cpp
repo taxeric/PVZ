@@ -1,5 +1,6 @@
 #include <iostream>
 #include <graphics.h>
+#include <mmsystem.h>
 #include <conio.h>
 #include <cstdio>
 #include <ctime>
@@ -18,6 +19,8 @@
 #include "models/plants/RepeaterPea.h"
 #include "models/plants/PotatoMine.h"
 #include "models/plants/SnowPea.h"
+
+#pragma comment(lib, "winmm.lib")
 
 using namespace std;
 
@@ -404,6 +407,7 @@ void collectSunshine(ExMessage* message) {
                 sunshineBall->speed = 1.0;
 //                gross_sunshine += SUNSHINE_AMOUNT;
                 gameStatus[game_level].sunshine += SUNSHINE_AMOUNT;
+                playSounds(SOUND_COLLECT_POINT);
                 //设置偏移
                 float destX = CARD_SLOT_START_X;
                 float destY = CARD_SLOT_START_Y;
@@ -477,11 +481,14 @@ void userClickEvent() {
 //                        landMap[row][column].deadTime = 0;
                         landMap[row][column].x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH;
                         landMap[row][column].y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT;
+                        landMap[row][column].hp = gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->hp;
                         gameStatus[game_level].sunshine -= gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine;
                         cout << "event: [plant] (" << row << "," << column << ") plant index = " << landMap[row][column].type
                         << " need sunshine = " << gameStatus[game_level].choosePlants[curMovePlantCardSlotIndex]->sunshine
                         << " current sunshine = " << gameStatus[game_level].sunshine
                         << endl;
+                        int rm = rand() % 2;
+                        playSounds(rm == 0 ? SOUND_PLANT_1 : SOUND_PLANT_2);
                     }
                 }
                 status = 0;
@@ -646,6 +653,10 @@ void createZombies() {
             zombie->freeze = false;
             zombie->freezeTimer = 8;
             gameStatus[game_level].zombieCount ++;
+            if (gameStatus[game_level].levelStatus == GameIdle) {
+                gameStatus[game_level].levelStatus = GameRunning;
+                playSounds(SOUND_ZOMBIES_ARE_COMING);
+            }
         }
     }
 }
@@ -708,6 +719,7 @@ void updateZombies() {
                         } else {
                             if (freezeActionCount > 4) {
                                 freezeActionCount = 0;
+                                playSounds(SOUND_FROZEN);
                                 if (zombies[i].eating) {
                                     zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
                                 } else {
@@ -847,6 +859,7 @@ void checkBullet2Zombie() {
                 zombies[k].hp -= 10;//默认伤害
                 normalBullets[i].explosion = true;
                 normalBullets[i].speed = 0;
+                playSounds(SOUND_PLANT_SPLAT);
                 if (zombies[k].hp <= 40 && zombies[k].hp > 0) {
                     zombies[k].lostHead = true;
                 } else if (zombies[k].hp <= 0) {
@@ -915,10 +928,9 @@ void checkZombie2Plant() {
                             if (count > 20) {//越大切换图片越慢
                                 count = 0;
                                 zombies[i].frameIndex ++;
-                                gameStatus[game_level].choosePlants[landMap[row][column].type - 1]->hp --;
-//                                landMap[row][column].deadTime ++;
+                                landMap[row][column].hp --;
                             }
-                            if (gameStatus[game_level].choosePlants[landMap[row][column].type - 1]->hp <= 0) {
+                            if (landMap[row][column].hp <= 0) {
                                 for (int m = 0; m < zombieCount; m ++) {
                                     if (zombies[m].attackRow == row && zombies[m].attackColumn == column) {
                                         zombies[m].attackRow = -1;
@@ -928,8 +940,8 @@ void checkZombie2Plant() {
                                         zombies[m].frameIndex = rand() % BASE_RES_PICS_AMOUNT;
                                     }
                                 }
-//                                landMap[row][column].deadTime = 0;
-                                gameStatus[game_level].choosePlants[landMap[row][column].type - 1]->hp = 100;
+                                playSounds(SOUND_GULP);
+                                landMap[row][column].hp = 0;
                                 landMap[row][column].caught = false;
                                 landMap[row][column].type = 0;
                             } else {
@@ -1009,6 +1021,11 @@ void startMenuUI() {
 
         EndBatchDraw();
     }
+}
+
+void evilLaugh() {
+    playSounds(SOUND_EVIL_LAUGH);
+    Sleep(3000);
 }
 
 void viewScene() {
@@ -1130,6 +1147,7 @@ void viewScene() {
                         if (plantIte != globalPlantMap.end()) {
                             gameStatus[game_level].choosePlants.push_back(plantIte->second);
                             cout << "event: [choose plant] (" << gameStatus[game_level].choosePlants.size() << ") plant index = " << plantIte->second->index << endl;
+                            playSounds(SOUND_FLOOP);
                         }
                     }
                     choosePlantFlag = false;
@@ -1224,6 +1242,7 @@ int main() {
 
     gameInit();
     startMenuUI();
+    evilLaugh();
 
     viewScene();
 
@@ -1409,3 +1428,10 @@ void loadNormalZombieDiePics(int size) {
 
 void loadZombieBoomDiePics(int size) {
 }
+
+void playSounds(const char* path) {
+     char play[64] = "play ";
+     char* result = strcat(play, path);
+    int ret = mciSendString(result, 0, 0, 0);
+    cout << "event: [play] - " << result << " ret -> " << ret << endl;
+ }
