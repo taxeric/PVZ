@@ -8,12 +8,26 @@
 #include "../Plant.h"
 
 class PotatoMine: public Plant {
-public:PotatoMine(int index) {
-    this->index = index;
+public:
+    PotatoMine(int index) {
+        this->setName("土豆地雷");
         this->cd = 20;
         this->hp = 100;
         this->sunshine = 25;
         this->index = index;
+    }
+
+    explicit PotatoMine(Plant *plant) {
+        auto* temp = dynamic_cast<PotatoMine*>(plant);
+        index = temp->index;
+        cd = temp->cd;
+        hp = temp->hp;
+        row = temp->row;
+        column = temp->column;
+        sunshine = temp->sunshine;
+        actionPicCount = temp->actionPicCount;
+        setName(temp->getName());
+        std::cout << "event: [new] " << temp->getName() << std::endl;
     }
 
     void loadCardPic() override {
@@ -21,6 +35,8 @@ public:PotatoMine(int index) {
 
     void loadActionPics() override {
     }
+
+    ~PotatoMine() override= default;
 };
 
 #endif //PVZ_POTATOMINE_H

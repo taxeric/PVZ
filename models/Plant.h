@@ -18,6 +18,7 @@ public:
      * 在植物map中的下标, 也对应全局植物卡槽初始化时的下标
      */
     int index;
+    int row, column;
     int actionPicCount;
     int sunshine;
     int hp;
@@ -39,7 +40,7 @@ public:
 
     virtual void loadCardPic() = 0;
     virtual void loadActionPics() = 0;
-
+    virtual ~Plant();
 };
 
 #endif //PVZ_PLANT_H

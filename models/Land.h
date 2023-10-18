@@ -5,6 +5,8 @@
 #ifndef PVZ_LAND_H
 #define PVZ_LAND_H
 
+#include "Plant.h"
+
 struct Land{
 
     //0 -> 没有植物
@@ -15,6 +17,9 @@ struct Land{
     bool caught;
     //植物hp
     int hp;
+
+    //当前土地种植的植物
+    Plant* plant;
 
     //block定时器
     int timer;

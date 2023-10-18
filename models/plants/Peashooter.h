@@ -9,7 +9,8 @@
 
 class Peashooter: public Plant {
 
-public:Peashooter(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
+public:
+    Peashooter(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
         this->setName("豌豆射手");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
@@ -20,11 +21,26 @@ public:Peashooter(std::string cardPath, std::string actionPath, int actionPicCou
         this->actionPicCount = actionPicCount;
     }
 
+    explicit Peashooter(Plant *plant) {
+        auto* temp = dynamic_cast<Peashooter*>(plant);
+        index = temp->index;
+        cd = temp->cd;
+        hp = temp->hp;
+        row = temp->row;
+        column = temp->column;
+        sunshine = temp->sunshine;
+        actionPicCount = temp->actionPicCount;
+        setName(temp->getName());
+        std::cout << "event: [new] " << temp->getName() << std::endl;
+    }
+
     void loadCardPic() override {
     }
 
     void loadActionPics() override {
     }
+
+    ~Peashooter() override= default;
 };
 
 #endif //PVZ_PEASHOOTER_H

@@ -9,7 +9,8 @@
 
 class RepeaterPea: public Plant {
 
-public:RepeaterPea(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
+public:
+    RepeaterPea(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
         this->setName("双发射手");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
@@ -20,11 +21,26 @@ public:RepeaterPea(std::string cardPath, std::string actionPath, int actionPicCo
         this->actionPicCount = actionPicCount;
     }
 
+    explicit RepeaterPea(Plant *plant) {
+        auto* temp = dynamic_cast<RepeaterPea*>(plant);
+        index = temp->index;
+        cd = temp->cd;
+        hp = temp->hp;
+        row = temp->row;
+        column = temp->column;
+        sunshine = temp->sunshine;
+        actionPicCount = temp->actionPicCount;
+        setName(temp->getName());
+        std::cout << "event: [new] " << temp->getName() << std::endl;
+    }
+
     void loadCardPic() override {
     }
 
     void loadActionPics() override {
     }
+
+    ~RepeaterPea() override= default;
 };
 
 #endif //PVZ_REPEATERPEA_H

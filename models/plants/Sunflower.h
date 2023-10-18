@@ -9,7 +9,8 @@
 
 class Sunflower: public Plant {
 
-public:Sunflower(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
+public:
+    Sunflower(std::string cardPath, std::string actionPath, int actionPicCount, int index) {
         this->setName("向日葵");
         this->setCardPath(cardPath);
         this->setActionPath(actionPath);
@@ -20,11 +21,26 @@ public:Sunflower(std::string cardPath, std::string actionPath, int actionPicCoun
         this->actionPicCount = actionPicCount;
     }
 
+    explicit Sunflower(Plant *plant) {
+        auto* temp = dynamic_cast<Sunflower*>(plant);
+        index = temp->index;
+        cd = temp->cd;
+        hp = temp->hp;
+        row = temp->row;
+        column = temp->column;
+        sunshine = temp->sunshine;
+        actionPicCount = temp->actionPicCount;
+        setName(temp->getName());
+        std::cout << "event: [new] " << temp->getName() << std::endl;
+    }
+
     void loadCardPic() override {
     }
 
     void loadActionPics() override {
     }
+
+    ~Sunflower() override= default;
 };
 
 #endif //PVZ_SUNFLOWER_H
