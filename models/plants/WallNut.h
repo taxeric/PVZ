@@ -14,7 +14,7 @@ public:
     /**
      * 受损等级 0->未受损 1->一级 2->二级
      */
-    int damageLevel;
+    int damageLevel = 0;
 
     WallNut(int index) {
         this->setName("坚果墙");

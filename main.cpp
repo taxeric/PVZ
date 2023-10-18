@@ -19,6 +19,7 @@
 #include "models/plants/RepeaterPea.h"
 #include "models/plants/PotatoMine.h"
 #include "models/plants/SnowPea.h"
+#include "models/plants/WallNut.h"
 
 #pragma comment(lib, "winmm.lib")
 
@@ -116,8 +117,8 @@ IMAGE imgBar;
 IMAGE imgChoosePlants;
 //全局植物卡槽图片, 游戏内的植物卡槽图片都通过它获取
 IMAGE imgGlobalCardsPics[PLANTS_COUNT];
-//全局植物图片, 游戏内的植物动图都通过它获取
-IMAGE* imgGlobalPlantsPics[PLANTS_COUNT][BASE_RES_PICS_AMOUNT];
+//全局植物图片, 游戏内的植物动图都通过它获取(如有不同形态,则在本身图片下标位置加上形态数量)
+IMAGE* imgGlobalPlantsPics[PLANTS_COUNT + 2][BASE_RES_PICS_AMOUNT];
 
 //僵尸池
 struct Zombie zombies[10];
@@ -170,7 +171,8 @@ Plant* generatePlantByType(Plant* choicePlantFromCardSlot, int type) {
         case 1: plant = new Peashooter(choicePlantFromCardSlot); break;
         case 2: plant = new PotatoMine(choicePlantFromCardSlot); break;
         case 3: plant = new SnowPea(choicePlantFromCardSlot); break;
-        case 4: plant = new RepeaterPea(choicePlantFromCardSlot); break;
+//        case 4: plant = new RepeaterPea(choicePlantFromCardSlot); break;
+        case 4: plant = new WallNut(choicePlantFromCardSlot); break;
         default:break;
     }
     return plant;
@@ -195,7 +197,8 @@ void gameInit() {
     globalPlantMap.insert(make_pair(PEASHOOT, new Peashooter("", "", 0, PEASHOOT)));
     globalPlantMap.insert(make_pair(POTATOMINE, new PotatoMine(POTATOMINE)));
     globalPlantMap.insert(make_pair(SNOWPEA, new SnowPea(SNOWPEA)));
-    globalPlantMap.insert(make_pair(REPEATERPEA, new RepeaterPea("", "", 0, REPEATERPEA)));
+//    globalPlantMap.insert(make_pair(REPEATERPEA, new RepeaterPea("", "", 0, REPEATERPEA)));
+    globalPlantMap.insert(make_pair(WALLNUT, new WallNut(WALLNUT)));
 
     game_level = 0;
     gameStatus[game_level].levelStatus = GameIdle;
@@ -225,20 +228,24 @@ void gameInit() {
 //    loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_JALAPENO, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 //    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_CHOMPER, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
     loadimage(&imgGlobalCardsPics[3], RES_CARD_PIC_SNOWPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
-    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_WALLNUT, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
+    //    loadimage(&imgGlobalCardsPics[4], RES_CARD_PIC_REPEATERPEA, BASE_CARD_WIDTH, BASE_CARD_HEIGHT);
 
     //土地
     memset(landMap, 0, sizeof(landMap));
 
     //加载植物图片
     memset(imgGlobalPlantsPics, 0, sizeof(imgGlobalPlantsPics));
-    loadSunflowerPics(0, 17);
-    loadPeashooterPics(1, 12);
-    loadPotatoMinePics(2, 12);
+    loadSunflowerPics(0, 18);
+    loadPeashooterPics(1, 13);
+    loadPotatoMinePics(2, 8);
 //    loadJalapenoPics(7);
 //    loadChomperPics(12);
-    loadSnowPeaPics(3, 14);
-    loadRepeatPeaShootPics(4, 14);
+    loadSnowPeaPics(3, 15);
+    loadWallNutPics(4, 16);
+    loadWallNutD1Pics(5, 11);
+    loadWallNutD2Pics(6, 15);
+//    loadRepeatPeaShootPics(4, 14);
 
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
@@ -266,7 +273,7 @@ void gameInit() {
 
     //杂项
     loadimage(&imgPotatoMineLoading, RES_PIC_POTATOMINE_INIT);
-    loadimage(&imgPotatoMineExplode, RES_PIC_POTATOMINE_BOOM);
+    loadimage(&imgPotatoMineExplode, RES_PIC_POTATOMINE_BOOM, LAND_MAP_SINGLE_WIDTH, LAND_MAP_SINGLE_HEIGHT);
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -291,7 +298,7 @@ void gameInit() {
 /**
  * 绘制卡槽
  */
- void drawCardSlot() {
+void drawCardSlot() {
     //绘制卡槽
     int space_x = 0;
     for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i ++) {
@@ -306,7 +313,7 @@ void gameInit() {
         }
         putimage(x, CARD_START_Y, &imgGlobalCardsPics[gameStatus[game_level].choosePlants[i]->index]);
     }
- }
+}
 
 /**
  * 绘制土地植物
@@ -320,19 +327,36 @@ void drawPlants() {
                 IMAGE* img = imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex];
                 int x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
                 int y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
-                if (landMap[row][column].type - 1 == POTATOMINE) {
-                    PotatoMine* potatoMine = dynamic_cast<PotatoMine*>(landMap[row][column].plant);
-                    if (potatoMine->loading) {
-                        putimagePng2(x, y, &imgPotatoMineLoading);
-                    } else {
-                        if (potatoMine->explode) {
-                            putimagePng2(x, y, &imgPotatoMineExplode);
+                switch (curPlantIndex) {
+                    case POTATOMINE:
+                    {
+                        auto* potatoMine = dynamic_cast<PotatoMine *>(landMap[row][column].plant);
+                        if (potatoMine->loading) {
+                            putimagePng2(x, y, &imgPotatoMineLoading);
+                        } else {
+                            if (potatoMine->explode) {
+                                putimagePng2(x, y, &imgPotatoMineExplode);
+                            } else {
+                                putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
+                            }
+                        }
+                    }
+                    break;
+                    case WALLNUT:
+                    {
+                        auto* wallNut = dynamic_cast<WallNut*>(landMap[row][column].plant);
+                        if (wallNut->damageLevel == 1) {
+                            putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex + 1][landMap[row][column].frameIndex]);
+                        } else if (wallNut->damageLevel == 2) {
+                            putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex + 2][landMap[row][column].frameIndex]);
                         } else {
                             putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
                         }
                     }
-                } else {
-                    putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
+                    break;
+                    default:
+                        putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
+                        break;
                 }
             }
         }
@@ -559,14 +583,28 @@ void updatePlants() {
     count ++;
     if (count > 3) {
         count = 0;
-        for (int i = 0; i < LAND_MAP_ROW; i++) {
-            for (int j = 0; j < LAND_MAP_COLUMN; j++) {
-                if (landMap[i][j].type > 0) {
-                    landMap[i][j].frameIndex++;
-                    int plantIndex = landMap[i][j].type - 1;
-                    int frameIndex = landMap[i][j].frameIndex;
-                    if (imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
-                        landMap[i][j].frameIndex = 0;
+        for (int row = 0; row < LAND_MAP_ROW; row++) {
+            for (int column = 0; column < LAND_MAP_COLUMN; column++) {
+                int plantType = landMap[row][column].type;
+                if (plantType > 0) {
+                    landMap[row][column].frameIndex++;
+                    int plantIndex = landMap[row][column].type - 1;
+                    int frameIndex = landMap[row][column].frameIndex;
+                    if (plantType - 1 == WALLNUT) {//坚果墙有三种样式
+                        auto *wallNut = dynamic_cast<WallNut *>(landMap[row][column].plant);
+                        if (wallNut->damageLevel == 0 && imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                        }
+                        if (wallNut->damageLevel == 1 && imgGlobalPlantsPics[plantIndex + 1][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                        }
+                        if (wallNut->damageLevel == 2 && imgGlobalPlantsPics[plantIndex + 2][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                        }
+                    } else {
+                        if (imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                        }
                     }
                 }
             }
@@ -983,7 +1021,23 @@ void checkZombie2Plant() {
                             if (count > 20) {//越大切换图片越慢
                                 count = 0;
                                 zombies[i].frameIndex ++;
-                                landMap[row][column].hp --;
+                                landMap[row][column].hp -= 10;
+                            }
+                            if (landMap[row][column].type - 1 == WALLNUT) {
+                                auto* wallNut = dynamic_cast<WallNut*>(landMap[row][column].plant);
+                                int chp = landMap[row][column].hp;
+                                if (chp > 150 && chp <= 300) {
+                                    if (wallNut->damageLevel == 0) {
+                                        wallNut->damageLevel = 1;
+                                        landMap[row][column].frameIndex = 0;
+                                    }
+                                }
+                                if (chp > 0 && chp <= 150) {
+                                    if (wallNut->damageLevel == 1) {
+                                        wallNut->damageLevel = 2;
+                                        landMap[row][column].frameIndex = 0;
+                                    }
+                                }
                             }
                             if (landMap[row][column].hp <= 0) {
                                 for (int m = 0; m < zombieCount; m ++) {
@@ -1469,6 +1523,45 @@ void loadSnowPeaPics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_SNOWPEA_PATH, "SnowPea_", i);
+        if (fileExist(fname)) {
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadWallNutPics(int index, int size) {
+    char fname[128];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_WALLNUT_DAMAGE_LV0_PATH, "WallNut_", i);
+        if (fileExist(fname)) {
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadWallNutD1Pics(int index, int size) {
+    char fname[128];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_WALLNUT_DAMAGE_LV1_PATH, "WallNut_cracked1_", i);
+        if (fileExist(fname)) {
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadWallNutD2Pics(int index, int size) {
+    char fname[128];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_WALLNUT_DAMAGE_LV2_PATH, "WallNut_cracked2_", i);
         if (fileExist(fname)) {
             imgGlobalPlantsPics[index][i] = new IMAGE;
             loadimage(imgGlobalPlantsPics[index][i], fname);

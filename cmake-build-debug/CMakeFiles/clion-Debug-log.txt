@@ -5,6 +5,6 @@ CMake Warning (dev) at CMakeLists.txt:11:
   Argument not separated from preceding token by whitespace.
 This warning is for project developers.  Use -Wno-dev to suppress it.
 
--- Configuring done (0.1s)
--- Generating done (0.0s)
+-- Configuring done (1.3s)
+-- Generating done (0.1s)
 -- Build files have been written to: E:/Program/C/PVZ/cmake-build-debug
