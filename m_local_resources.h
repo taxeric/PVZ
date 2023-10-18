@@ -66,6 +66,8 @@ enum {
     SUNSHINE_PRODUCT
 };
 
+// <editor-fold defaultstate="collapsed" desc="图像文件">
+
 #define BASE_RES_PATH "../res/graphics/"
 
 #define BASE_RES_START_MENU_PATH "../res/graphics/Screen/MainMenu.png"
@@ -136,6 +138,42 @@ enum {
 #define RES_PIC_BULLET_ICE "../res/graphics/Bullets/PeaIce/ProjectileSnowPea.png"
 //碰撞僵尸后的豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL_EXPLODE "../res/graphics/Bullets/PeaNormalExplode/PeaNormalExplode_0.png"
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc="音频文件">
+
+//阳光点数收集音效
+#define SOUND_COLLECT_POINT "../res/sounds/points.mp3"
+//子弹爆裂音效
+#define SOUND_PLANT_SPLAT "../res/sounds/splat3.mp3"
+//植物被种植🌻
+#define SOUND_PLANT_1 "../res/sounds/plant.mp3"
+#define SOUND_PLANT_2 "../res/sounds/plant2.mp3"
+//铲除植物😭
+//zombies are coming...
+#define SOUND_ZOMBIES_ARE_COMING "../res/sounds/awooga.mp3"
+//啃食植物
+#define SOUND_CHOMP_PLANT_1 "../res/sounds/chomp.mp3"
+#define SOUND_CHOMP_PLANT_2 "../res/sounds/chomp2.mp3"
+//歪比巴卜
+#define SOUND_CRAZY_DAVES_SHORT "../res/sounds/crazydavesshort1.mp3"
+//hia hia hia hia
+#define SOUND_EVIL_LAUGH "../res/sounds/evillaugh.mp3"
+//???
+#define SOUND_FLOOP "../res/sounds/floop.mp3"
+//冰冻效果
+#define SOUND_FROZEN "../res/sounds/frozen.mp3"
+//来一大口?
+#define SOUND_GULP "../res/sounds/gulp.mp3"
+//正在冷却(蜂鸣器)
+#define SOUND_WAITING_CD "../res/sounds/buzzer.mp3"
+//win!
+#define SOUND_WIN_MUSIC "../res/sounds/winmusic.mp3"
+//lose
+#define SOUND_LOSE_MUSIC "../res/sounds/losemusic.mp3"
+// </editor-fold>
+
+void playSounds(const char* path);
 
 void loadSunshineBallPics(int size);
 
