@@ -76,8 +76,8 @@ enum {
 #define BASE_RES_PATH "../res/graphics/"
 
 #define BASE_RES_START_MENU_PATH "../res/graphics/Screen/MainMenu.png"
-#define BASE_RES_ADVENTURE_0_PATH "../res/graphics/Screen/Adventure_0.png"
-#define BASE_RES_ADVENTURE_1_PATH "../res/graphics/Screen/Adventure_1.png"
+#define BASE_RES_ADVENTURE_0_PATH "../res/graphics/Screen/SelectorScreen_StartAdventure_1.png"
+#define BASE_RES_ADVENTURE_1_PATH "../res/graphics/Screen/SelectorScreen_StartAdventure_2.png"
 
 #define BASE_RES_BG_PATH "../res/graphics/Items/Background/Background_0.jpg"
 #define BASE_RES_BAR_BG_PATH "../res/graphics/Screen/SeedBank.png"
@@ -169,6 +169,8 @@ enum {
 
 // <editor-fold defaultstate="collapsed" desc="音频文件">
 
+//按钮点击
+#define SOUND_BTN_CLICK "../res/sounds/buttonclick.mp3"
 //阳光点数收集音效
 #define SOUND_COLLECT_POINT "../res/sounds/points.mp3"
 //子弹爆裂音效
@@ -182,6 +184,7 @@ enum {
 //啃食植物
 #define SOUND_CHOMP_PLANT_1 "../res/sounds/chomp.mp3"
 #define SOUND_CHOMP_PLANT_2 "../res/sounds/chomp2.mp3"
+#define SOUND_CHOMP_SOFT "../res/sounds/chompsoft.mp3"
 //歪比巴卜
 #define SOUND_CRAZY_DAVES_SHORT "../res/sounds/crazydavesshort1.mp3"
 //hia hia hia hia
@@ -196,6 +199,12 @@ enum {
 #define SOUND_POTATO_BOOM "../res/sounds/potato_mine.mp3"
 //正在冷却(蜂鸣器)
 #define SOUND_WAITING_CD "../res/sounds/buzzer.mp3"
+//破土而出
+#define SOUND_DIRT_RISE "../res/sounds/dirt_rise.mp3"
+//main bgm
+#define SOUND_MAIN_MUSIC "../res/sounds/mainmusic.mp3"
+//准备! 安放! 植物!
+#define SOUND_READY_SET_PLANT "../res/sounds/readysetplant.mp3"
 //win!
 #define SOUND_WIN_MUSIC "../res/sounds/winmusic.mp3"
 //lose
@@ -203,6 +212,7 @@ enum {
 // </editor-fold>
 
 void playSounds(const char* path);
+void playSoundsWaitCompleted(const char* path);
 
 void loadSunshineBallPics(int size);
 
@@ -257,5 +267,10 @@ void loadSnowPeaPics(int index, int size);
 void loadWallNutPics(int index, int size);
 void loadWallNutD1Pics(int index, int size);
 void loadWallNutD2Pics(int index, int size);
+
+/**
+ * 播放啃食植物音效
+ */
+void playChompSound();
 
 #endif //PVZ_M_LOCAL_RESOURCES_H
