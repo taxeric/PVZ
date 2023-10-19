@@ -165,6 +165,13 @@ enum {
 #define RES_PIC_BULLET_ICE "../res/graphics/Bullets/PeaIce/ProjectileSnowPea.png"
 //碰撞僵尸后的豌豆子弹图片
 #define RES_PIC_BULLET_PEA_NORMAL_EXPLODE "../res/graphics/Bullets/PeaNormalExplode/PeaNormalExplode_0.png"
+
+//准备!
+#define RES_PIC_START_READY "../res/graphics/Screen/Ready/StartReady.png"
+//安放!!
+#define RES_PIC_START_SET "../res/graphics/Screen/Ready/StartSet.png"
+//植物!!!
+#define RES_PIC_START_PLANT "../res/graphics/Screen/Ready/StartPlant.png"
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="音频文件">

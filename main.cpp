@@ -3,6 +3,7 @@
 #include <mmsystem.h>
 #include <conio.h>
 #include <cstdio>
+#include <chrono>
 #include <ctime>
 #include <cmath>
 #include <vector>
@@ -150,6 +151,8 @@ IMAGE imgBulletNormalExplode[4];
 IMAGE imgPotatoMineLoading;
 //土豆地雷boom
 IMAGE imgPotatoMineExplode;
+//准备!安放!植物!
+IMAGE imgStartReady, imgStartSet, imgStartPlant;
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -279,6 +282,9 @@ void gameInit() {
     //杂项
     loadimage(&imgPotatoMineLoading, RES_PIC_POTATOMINE_INIT);
     loadimage(&imgPotatoMineExplode, RES_PIC_POTATOMINE_BOOM, LAND_MAP_SINGLE_HEIGHT, LAND_MAP_SINGLE_HEIGHT);
+    loadimage(&imgStartReady, RES_PIC_START_READY);
+    loadimage(&imgStartSet, RES_PIC_START_SET);
+    loadimage(&imgStartPlant, RES_PIC_START_PLANT);
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -287,7 +293,7 @@ void gameInit() {
     zombieFreezeTimer = 2;
     gross_sunshine = 50;
 
-//    gross_card_slot_space_x = (PLANTS_COUNT - 1) * SPACE_BETWEEN_CARD;
+    mciSendString("open ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
 
     LOGFONT f;
     gettextstyle(&f);
@@ -754,6 +760,21 @@ void createZombies() {
     if (gameStatus[game_level].zombieCount >= gameStatus[game_level].zombieMaxCount) {
         return;
     }
+    //从15秒后开始创建僵尸
+    static bool startCreateZombies = false;
+    if (!startCreateZombies) {
+        long long curTime = time(nullptr);
+        static long long lastTime = 0;
+        if (lastTime == 0) {
+            lastTime = curTime;
+            return;
+        }
+        if (curTime - lastTime > 15) {
+            startCreateZombies = true;
+            playSounds(SOUND_ZOMBIES_ARE_COMING);
+        }
+        return;
+    }
 
     static int zombieFre = 40;//僵尸生成间隔
     static int count = 0;
@@ -782,10 +803,6 @@ void createZombies() {
             zombie->freeze = false;
             zombie->freezeTimer = 8;
             gameStatus[game_level].zombieCount ++;
-            if (gameStatus[game_level].levelStatus == GameIdle) {
-                gameStatus[game_level].levelStatus = GameRunning;
-                playSounds(SOUND_ZOMBIES_ARE_COMING);
-            }
         }
     }
 }
@@ -1075,6 +1092,7 @@ void checkZombie2Plant() {
                                     }
                                 }
                             }
+                            playChompSound();
                             if (landMap[row][column].hp <= 0) {
                                 for (int m = 0; m < zombieCount; m ++) {
                                     if (zombies[m].attackRow == row && zombies[m].attackColumn == column) {
@@ -1122,6 +1140,7 @@ void potatoMineBoom() {
                     if (potatoMine->loadTimer >= 1000) {
                         potatoMine->loading = false;//装填完毕
                         landMap[row][column].frameIndex = 0;
+                        playSounds(SOUND_DIRT_RISE);
                     }
                 } else {
                     for (int i = 0; i < zombieMax; i ++) {
@@ -1183,8 +1202,8 @@ void updateGame() {
 void startMenuUI() {
     IMAGE imgStartUIBg, imgAdventure0, imgAdventure1;
     loadimage(&imgStartUIBg, BASE_RES_START_MENU_PATH);
-    loadimage(&imgAdventure0, BASE_RES_ADVENTURE_0_PATH, 300, 80);
-    loadimage(&imgAdventure1, BASE_RES_ADVENTURE_1_PATH, 300, 80);
+    loadimage(&imgAdventure0, BASE_RES_ADVENTURE_0_PATH);
+    loadimage(&imgAdventure1, BASE_RES_ADVENTURE_1_PATH);
     bool action_flag = false;
     bool move_flag = false;
     while (true) {
@@ -1216,8 +1235,9 @@ void startMenuUI() {
 }
 
 void evilLaugh() {
-    playSounds(SOUND_EVIL_LAUGH);
-    Sleep(3000);
+    playSoundsWaitCompleted(SOUND_EVIL_LAUGH);
+    Sleep(50);
+    mciSendString("close ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
 }
 
 void viewScene() {
@@ -1345,6 +1365,7 @@ void viewScene() {
                     choosePlantFlag = false;
                 }
                 if (startBtnFlag) {
+                    playSounds(SOUND_BTN_CLICK);
                     //等待一段时间
                     for (int i = 0; i < 100; i++) {
                         BeginBatchDraw();
@@ -1415,6 +1436,74 @@ void plantSlotDown() {
     }
 }
 
+void readySetPlant() {
+    static int curGameLevel = 0;
+    static int setPlantTimer = 0;
+    if (curGameLevel != game_level) {
+        setPlantTimer = 0;
+        curGameLevel = game_level;
+    }
+    if (setPlantTimer > 3) {
+        return;
+    }
+    while (true) {
+        BeginBatchDraw();
+        auto now = chrono::system_clock::now();
+        long long curTime = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
+        static long long lastTime = 0;
+        if (lastTime == 0) {
+            lastTime = curTime;
+        }
+        putimage(- WIN_OFFSET, 0, &imgBg);
+        putimage(CARD_SLOT_START_X, CARD_SLOT_START_Y, &imgBar);
+
+        //绘制卡槽
+        int space_x = 0;
+        for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i ++) {
+            long int x = CARD_START_X + i * BASE_CARD_WIDTH;
+            if (i > 0) {
+                space_x += SPACE_BETWEEN_CARD;
+                x += space_x;
+            }
+            if (card_slot_x_coordinate[i][0] <= 0 && card_slot_x_coordinate[i][1] <= 0) {
+                card_slot_x_coordinate[i][0] = x;
+                card_slot_x_coordinate[i][1] = x + BASE_CARD_WIDTH;
+            }
+            putimage(x, CARD_START_Y, &imgGlobalCardsPics[gameStatus[game_level].choosePlants[i]->index]);
+        }
+        if (curTime - lastTime >= 500) {
+            lastTime = curTime;
+            setPlantTimer++;
+        }
+        switch (setPlantTimer) {
+            case 1:
+                putimagePng3((WIN_WIDTH - imgStartReady.getwidth()) / 2,
+                             (WIN_HEIGHT - imgStartReady.getheight()) / 2, &imgStartReady);
+                break;
+            case 2:
+                putimagePng3((WIN_WIDTH - imgStartSet.getwidth()) / 2,
+                             (WIN_HEIGHT - imgStartSet.getheight()) / 2, &imgStartSet);
+                break;
+            case 3:
+            {
+                putimagePng3((WIN_WIDTH - imgStartPlant.getwidth()) / 2,
+                             (WIN_HEIGHT - imgStartPlant.getheight()) / 2, &imgStartPlant);
+            }
+                break;
+            default:
+                break;
+        }
+        if (setPlantTimer > 3) {
+            EndBatchDraw();
+            break;
+        }
+        EndBatchDraw();
+    }
+    if (gameStatus[game_level].levelStatus == GameIdle) {
+        gameStatus[game_level].levelStatus = GameRunning;
+    }
+}
+
 bool checkGameStatus() {
     int ret = false;
     int status = gameStatus[game_level].levelStatus;
@@ -1439,6 +1528,8 @@ int main() {
     viewScene();
 
     plantSlotDown();
+
+    readySetPlant();
 
     int timer = 0;
     bool refreshFlag = true;
@@ -1660,9 +1751,30 @@ void loadNormalZombieDiePics(int size) {
 void loadZombieBoomDiePics(int size) {
 }
 
+void playChompSound() {
+    bool atk1 = musicIsPlaying(SOUND_CHOMP_PLANT_1);
+    if (atk1) {
+        bool atk2 = musicIsPlaying(SOUND_CHOMP_PLANT_2);
+        if (atk2) {
+            return;
+        }
+        playSounds(SOUND_CHOMP_PLANT_2);
+    } else {
+        playSounds(SOUND_CHOMP_PLANT_1);
+    }
+}
+
 void playSounds(const char* path) {
     char play[64] = "play ";
     char* result = strcat(play, path);
+    int ret = mciSendString(result, 0, 0, 0);
+    cout << "event: [play] - " << result << " ret -> " << ret << endl;
+}
+
+void playSoundsWaitCompleted(const char* path) {
+    char play[64] = "play ";
+    char* temp = strcat(play, path);
+    char* result = strcat(play, " wait");
     int ret = mciSendString(result, 0, 0, 0);
     cout << "event: [play] - " << result << " ret -> " << ret << endl;
 }
