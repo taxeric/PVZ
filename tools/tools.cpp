@@ -7,6 +7,7 @@
 #include <cstdio>
 #include "tools.h"
 #pragma comment(lib, "MSImg32.Lib")
+#pragma comment(lib, "winmm.lib")
 
 /**
  * 废弃 建议使用 putimagePng2 或 putimagePng3
@@ -81,4 +82,15 @@ bool fileExist(const char * filename) {
         fclose(fp);
     }
     return exist;
+}
+
+bool musicIsPlaying(const char* path) {
+    bool isPlaying;
+    char status[48] = {};
+    char temp[] = "status ";
+    char* temp1 = strcat(temp, path);
+    char* command = strcat(temp1, " mode");
+    mciSendString(command, status, 128, 0);
+    isPlaying = strcmp(status, "playing") == 0;
+    return isPlaying;
 }

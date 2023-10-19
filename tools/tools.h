@@ -13,4 +13,6 @@ void putimagePng(int x, int y, IMAGE* image);
 void putimagePng2(int x, int y, IMAGE* image);
 void putimagePng3(int x, int y, IMAGE* image);
 
+bool musicIsPlaying(const char* path);
+
 #endif //PVZ_TOOLS_H
