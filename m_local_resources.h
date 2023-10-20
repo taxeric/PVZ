@@ -84,6 +84,17 @@ enum {
 #define BASE_RES_CHOOSE_PLANTS_PATH "../res/graphics/Screen/PanelBackground.png"
 #define BASE_RES_CHOOSE_PLANTS_START_BTN_PATH "../res/graphics/Screen/StartButton.png"
 
+//退出游戏
+#define BASE_RES_EXIT_GAME_1_PATH "../res/graphics/Screen/Quit/SelectorScreen_Quit1.png"
+#define BASE_RES_EXIT_GAME_2_PATH "../res/graphics/Screen/Quit/SelectorScreen_Quit2.png"
+
+//铲子框框
+#define RES_PIC_SHOVEL_BANK_PATH "../res/graphics/Screen/Shovel/ShovelBank.png"
+//小铲子
+#define RES_PIC_SHOVEL_PATH "../res/graphics/Screen/Shovel/Shovel.png"
+//铲子移动
+#define RES_PIC_SHOVEL_MOVE_PATH "../res/graphics/Screen/Shovel/Shovel_hi_res.png"
+
 //阳光路径
 #define RES_PIC_SUNSHINE_PATH "../res/graphics/Plants/Sun/"
 
