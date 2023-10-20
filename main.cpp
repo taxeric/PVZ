@@ -92,10 +92,13 @@ using namespace std;
 //僵尸冻结帧计次(当受到寒冰子弹攻击时开始计次)
 #define TIMER_ZOMBIE_FREEZE_FRAME 5
 
+//最大关卡数量
+#define GAME_LEVEL_MAX_COUNT 5
+
 //当前关卡
 int game_level;
 //游戏状态
-struct GameStatus gameStatus[5];
+struct GameStatus gameStatus[GAME_LEVEL_MAX_COUNT];
 
 std::map<int, Plant*> globalPlantMap;
 
@@ -122,8 +125,6 @@ struct Land landMap[LAND_MAP_ROW][LAND_MAP_COLUMN];
 struct SunshineBall sunshineBalls[10];
 //阳光图片
 IMAGE imgSunshineBallPics[BASE_RES_PICS_AMOUNT];
-//阳光总数(废弃, 使用GameStatus[game_level]->sunshine代替)
-int gross_sunshine;
 //阳光pic宽高
 int sunshinePicWidth, sunshinePicHeight;
 
@@ -148,8 +149,6 @@ IMAGE imgZombiesAttackPics1[AMOUNT_ZOMBIE_ATTACK_PIC_1];
 //僵尸死亡图片
 IMAGE imgZombiesDeadPics1[AMOUNT_ZOMBIE_DEAD_PIC_1];
 IMAGE imgZombiesDeadPics2[AMOUNT_ZOMBIE_DEAD_PIC_2];
-//僵尸冻结计次
-int zombieFreezeTimer;
 
 //普通子弹池
 struct Bullet normalBullets[30];
@@ -220,14 +219,6 @@ void gameInit() {
     globalPlantMap.insert(make_pair(SNOWPEA, new SnowPea(SNOWPEA)));
 //    globalPlantMap.insert(make_pair(REPEATERPEA, new RepeaterPea("", "", 0, REPEATERPEA)));
     globalPlantMap.insert(make_pair(WALLNUT, new WallNut(WALLNUT)));
-
-    game_level = 0;
-    gameStatus[game_level].levelStatus = GameIdle;
-    gameStatus[game_level].level = game_level + 1;
-    gameStatus[game_level].killCount = 0;
-    gameStatus[game_level].zombieMaxCount = 10;
-    gameStatus[game_level].sunshine = 900;
-    memset(gameStatus[game_level].choosePlantsIndex, -1, sizeof(gameStatus[game_level].choosePlantsIndex));
 
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
     //加载阳光图片
@@ -309,8 +300,6 @@ void gameInit() {
 
     curMovePlantPos = 0;
     curMovePlantCardSlotIndex = -1;
-    zombieFreezeTimer = 2;
-    gross_sunshine = 50;
 
     mciSendString("open ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
 
@@ -1315,6 +1304,9 @@ void evilLaugh() {
     mciSendString("close ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
 }
 
+/**
+ * 新关卡过场-选择植物
+ */
 void viewScene() {
     int xMin = WIN_WIDTH - imgBg.getwidth();
     int zombiesStandCoordinate[9][2] = {0 };
@@ -1485,6 +1477,9 @@ void viewScene() {
     }
 }
 
+/**
+ * 新关卡过场-回到空地
+ */
 void plantSlotDown() {
     for (int y = -(CARD_SLOT_START_Y + BASE_CARD_HEIGHT); y <= CARD_SLOT_START_Y; y += 2) {
         BeginBatchDraw();
@@ -1511,6 +1506,9 @@ void plantSlotDown() {
     }
 }
 
+/**
+ * 新关卡-准备安放植物
+ */
 void readySetPlant() {
     static int curGameLevel = 0;
     static int setPlantTimer = 0;
@@ -1587,35 +1585,52 @@ void readySetPlant() {
     }
 }
 
-bool checkGameStatus() {
-    int ret = false;
-    int status = gameStatus[game_level].levelStatus;
-    if (status == GameSuccess) {
-        Sleep(2000);
-        //TODO 进入下一关
-        ret = true;
-    } else if (status == GameFailed) {
-        Sleep(2000);
-        ret = false;
+void resetAllStatus() {
+
+    for (int row = 0; row < LAND_MAP_ROW; row ++) {
+        for (int column = 0; column < LAND_MAP_COLUMN; column++) {
+            if (landMap[row][column].type > 0) {
+                landMap[row][column].type = 0;
+                clearPlantPointer(row, column);
+            }
+        }
     }
-    return ret;
+
+    //土地
+    memset(landMap, 0, sizeof(landMap));
+    //加载僵尸数据
+    memset(zombies, 0, sizeof(zombies));
+    //加载子弹数据
+    memset(normalBullets, 0, sizeof(normalBullets));
+    memset(snowBullets, 0, sizeof(snowBullets));
+
+    curMovePlantPos = 0;
+    curMovePlantCardSlotIndex = -1;
 }
 
-int main() {
-    std::cout << "Hello, PVZ!" << std::endl;
+/**
+ * 从0开始
+ * @param level
+ */
+void createNewLevel(int level) {
+    cout << "event: create new game level " << level << endl;
+    game_level = level;
+    gameStatus[game_level].levelStatus = GameIdle;
+    gameStatus[game_level].level = game_level + 1;
+    gameStatus[game_level].killCount = 0;
+    gameStatus[game_level].zombieMaxCount = 10 * (level + 1);
+    gameStatus[game_level].sunshine = 50;
+    gameStatus[game_level].choosePlants.clear();
 
-    gameInit();
-    startMenuUI();
-    evilLaugh();
+    resetAllStatus();
 
     viewScene();
-
     plantSlotDown();
-
     readySetPlant();
 
     int timer = 0;
     bool refreshFlag = true;
+    int mGameStatus = GameIdle;
     while (true) {
 
         userClickEvent();
@@ -1630,11 +1645,40 @@ int main() {
             refreshFlag = false;
             updateWindow();
             updateGame();
-            if (checkGameStatus()) {
+
+            mGameStatus = gameStatus[game_level].levelStatus;
+            if (mGameStatus == GameSuccess || mGameStatus == GameFailed) {
                 break;
             }
         }
     }
+    switch (mGameStatus) {
+        case GameSuccess:
+        {
+            if (game_level < GAME_LEVEL_MAX_COUNT - 1) {
+                createNewLevel(game_level + 1);
+            } else {
+                cout << "game completed!" << endl;
+                exit(0);
+            }
+        }
+            break;
+        case GameFailed:
+            cout << "game failed" << endl;
+            createNewLevel(game_level);
+            break;
+        default:break;
+    }
+}
+
+int main() {
+    std::cout << "Hello, PVZ!" << std::endl;
+
+    gameInit();
+    startMenuUI();
+    evilLaugh();
+
+    createNewLevel(0);
 
     _getch();
 
