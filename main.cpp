@@ -659,6 +659,7 @@ void userClickEvent() {
                     if (land->type > 0) {
                         land->type = 0;
                         clearPlantPointer(row, column);
+                        playSounds(SOUND_SHOVEL);
                     }
                     dragShovel = false;
                 }

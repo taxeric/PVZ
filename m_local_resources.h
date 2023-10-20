@@ -197,6 +197,7 @@ enum {
 #define SOUND_PLANT_1 "../res/sounds/plant.mp3"
 #define SOUND_PLANT_2 "../res/sounds/plant2.mp3"
 //铲除植物😭
+#define SOUND_SHOVEL "../res/sounds/shovel.mp3"
 //zombies are coming...
 #define SOUND_ZOMBIES_ARE_COMING "../res/sounds/awooga.mp3"
 //啃食植物
