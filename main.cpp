@@ -38,9 +38,18 @@ using namespace std;
 //游戏开始前植物卡槽仓库起点
 #define GAME_PLANT_CARD_SLOT_STORE_X 23
 
-//卡槽起始坐标(包含左侧阳光数)
+//卡槽起始坐标(左上角,包含左侧阳光数)
 #define CARD_SLOT_START_X (250 - WIN_OFFSET)
 #define CARD_SLOT_START_Y 0
+//卡槽终点坐标(右下角)
+#define CARD_SLOT_END_X (CARD_SLOT_START_X + 445)
+#define CARD_SLOT_END_Y 85
+
+//铲子和槽位起始坐标
+#define SHOVEL_START_X CARD_SLOT_END_X
+#define SHOVEL_START_Y 0
+//铲子和槽位宽度
+#define SHOVEL_WIDTH 72
 
 //卡片宽高
 #define BASE_CARD_WIDTH 52
@@ -94,6 +103,11 @@ std::map<int, Plant*> globalPlantMap;
 int gross_card_slot_space_x = 0;
 //卡槽起点终点x坐标
 int card_slot_x_coordinate[PLANTS_COUNT][2];
+
+//是否拖动铲子
+bool dragShovel = false;
+//铲子拖动坐标
+int curMoveShovelX, curMoveShovelY;
 
 //当前选中植物在移动过程中的位置
 int curMovePlantX, curMovePlantY;
@@ -153,6 +167,8 @@ IMAGE imgPotatoMineLoading;
 IMAGE imgPotatoMineExplode;
 //准备!安放!植物!
 IMAGE imgStartReady, imgStartSet, imgStartPlant;
+//铲子&铲子槽&大铲子
+IMAGE imgShovel, imgShovelSlot, imgShovelHi;
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -285,6 +301,9 @@ void gameInit() {
     loadimage(&imgStartReady, RES_PIC_START_READY);
     loadimage(&imgStartSet, RES_PIC_START_SET);
     loadimage(&imgStartPlant, RES_PIC_START_PLANT);
+    loadimage(&imgShovel, RES_PIC_SHOVEL_PATH);
+    loadimage(&imgShovelSlot, RES_PIC_SHOVEL_BANK_PATH);
+    loadimage(&imgShovelHi, RES_PIC_SHOVEL_MOVE_PATH);
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -331,6 +350,14 @@ void drawCardSlot() {
         }
         putimage(x, CARD_START_Y, img);
     }
+}
+
+/**
+ * 绘制铲子
+ */
+void drawShovel() {
+    putimage(SHOVEL_START_X, SHOVEL_START_Y, &imgShovelSlot);
+    putimagePng2(SHOVEL_START_X, SHOVEL_START_Y, &imgShovel);
 }
 
 /**
@@ -454,6 +481,21 @@ void drawSunshineScore() {
     outtextxy(SUNSHINE_TEXT_START_X, SUNSHINE_TEXT_START_Y, scoreText);
 }
 
+/**
+ * 拖动绘制
+ */
+void drawDragEvent() {
+    if (curMovePlantPos > 0) {
+        IMAGE* img = imgGlobalPlantsPics[curMovePlantPos - 1][0];
+        putimagePng2(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
+    }
+    if (dragShovel) {
+        int iw = imgShovelHi.getwidth();
+        int ih = imgShovelHi.getheight();
+        putimagePng2(curMoveShovelX - iw / 2, curMoveShovelY - ih / 2, &imgShovelHi);
+    }
+}
+
 void updateWindow() {
     //缓冲
     BeginBatchDraw();
@@ -463,12 +505,7 @@ void updateWindow() {
     setbkcolor(TRANSPARENT);
 
     drawCardSlot();
-
-    //拖动绘制
-    if (curMovePlantPos > 0) {
-        IMAGE* img = imgGlobalPlantsPics[curMovePlantPos - 1][0];
-        putimagePng2(curMovePlantX - img->getwidth() / 2, curMovePlantY - img->getheight() / 2, img);
-    }
+    drawShovel();
 
     drawSunshineScore();
 
@@ -476,6 +513,8 @@ void updateWindow() {
     drawZombies();
     drawSunshineBalls();
     drawBullets();
+
+    drawDragEvent();
 
     //结束缓冲
     EndBatchDraw();
@@ -511,16 +550,16 @@ void collectSunshine(ExMessage* message) {
 
 void userClickEvent() {
     ExMessage message{};
-    static int status = 0;
+    static int movePlantStatus = 0;
     int choosePlantsCount = gameStatus[game_level].choosePlants.size();
     if (peekmessage(&message)) {
         if (message.message == WM_LBUTTONDOWN) {
             //鼠标按下事件
             //植物卡槽x范围
-            bool x_value = message.x > CARD_START_X && message.x < CARD_START_X + BASE_CARD_WIDTH * choosePlantsCount + gross_card_slot_space_x;
+            bool plantSlotX = message.x > CARD_START_X && message.x < CARD_START_X + BASE_CARD_WIDTH * choosePlantsCount + gross_card_slot_space_x;
             //植物卡槽y范围
-            bool y_value = message.y > CARD_START_Y && message.y < BASE_CARD_HEIGHT;
-            if (x_value && y_value) {
+            bool plantSlotY = message.y > CARD_START_Y && message.y < BASE_CARD_HEIGHT;
+            if (plantSlotX && plantSlotY) {
                 for (int x_index = 0; x_index < gameStatus[game_level].choosePlants.size(); x_index ++) {
                     //当前点击的植物
                     Plant* plant = gameStatus[game_level].choosePlants[x_index];
@@ -533,7 +572,7 @@ void userClickEvent() {
                         } else {
                             //检查阳光
                             if (sunshine >= plant->sunshine) {
-                                status = 1;
+                                movePlantStatus = 1;
                                 curMovePlantX = message.x;
                                 curMovePlantY = message.y;
                                 curMovePlantPos = plant->index + 1;
@@ -550,21 +589,31 @@ void userClickEvent() {
                     }
                 }
             } else {
-                //收集阳光
-                collectSunshine(&message);
+                bool shovelSlotX = message.x > SHOVEL_START_X && message.x <= SHOVEL_START_X + SHOVEL_WIDTH;
+                bool shovelSlotY = message.y > SHOVEL_START_Y && message.y <= SHOVEL_START_Y + SHOVEL_WIDTH;//槽位宽高一致
+                if (shovelSlotX && shovelSlotY) {
+                    dragShovel = true;
+                    curMoveShovelX = message.x;
+                    curMoveShovelY = message.y;
+                } else {
+                    //收集阳光
+                    collectSunshine(&message);
+                }
             }
-        } else if (message.message == WM_MOUSEMOVE && status == 1) {
+        } else if (message.message == WM_MOUSEMOVE && (movePlantStatus == 1 || dragShovel)) {
             //鼠标移动事件
             curMovePlantX = message.x;
             curMovePlantY = message.y;
+            curMoveShovelX = message.x;
+            curMoveShovelY = message.y;
         } else if (message.message == WM_LBUTTONUP) {
-            //鼠标抬起事件
-            if (status == 1) {
-                //x范围
+            if (movePlantStatus == 1) {
+                //土地x范围
                 int x_value = message.x > LAND_MAP_START_X && message.x < LAND_MAP_END_X;
-                //y范围
+                //土地y范围
                 int y_value = message.y > LAND_MAP_START_Y && message.y < LAND_MAP_END_Y;
                 if (x_value && y_value) {
+                    //抬起时鼠标所在的行列
                     int row = (message.y - LAND_MAP_START_Y) / LAND_MAP_SINGLE_HEIGHT;
                     int column = (message.x - LAND_MAP_START_X) / LAND_MAP_SINGLE_WIDTH;
                     struct Land* land = &landMap[row][column];
@@ -593,9 +642,26 @@ void userClickEvent() {
                         playSounds(rm == 0 ? SOUND_PLANT_1 : SOUND_PLANT_2);
                     }
                 }
-                status = 0;
+                movePlantStatus = 0;
                 curMovePlantPos = 0;
                 curMovePlantCardSlotIndex = -1;
+            }
+            if (dragShovel) {
+                //土地x范围
+                int x_value = message.x > LAND_MAP_START_X && message.x < LAND_MAP_END_X;
+                //土地y范围
+                int y_value = message.y > LAND_MAP_START_Y && message.y < LAND_MAP_END_Y;
+                if (x_value && y_value) {
+                    //抬起时鼠标所在的行列
+                    int row = (message.y - LAND_MAP_START_Y) / LAND_MAP_SINGLE_HEIGHT;
+                    int column = (message.x - LAND_MAP_START_X) / LAND_MAP_SINGLE_WIDTH;
+                    struct Land* land = &landMap[row][column];
+                    if (land->type > 0) {
+                        land->type = 0;
+                        clearPlantPointer(row, column);
+                    }
+                    dragShovel = false;
+                }
             }
         }
     }
@@ -1446,6 +1512,7 @@ void readySetPlant() {
     if (setPlantTimer > 3) {
         return;
     }
+    static bool playReadyMusic = false;
     while (true) {
         BeginBatchDraw();
         auto now = chrono::system_clock::now();
@@ -1471,14 +1538,21 @@ void readySetPlant() {
             }
             putimage(x, CARD_START_Y, &imgGlobalCardsPics[gameStatus[game_level].choosePlants[i]->index]);
         }
-        if (curTime - lastTime >= 500) {
+        if (curTime - lastTime >= 750) {
             lastTime = curTime;
             setPlantTimer++;
         }
         switch (setPlantTimer) {
             case 1:
+            {
+                if (!playReadyMusic) {
+                    playReadyMusic = true;
+                    playSounds(SOUND_READY_SET_PLANT);
+                    Sleep(160);
+                }
                 putimagePng3((WIN_WIDTH - imgStartReady.getwidth()) / 2,
                              (WIN_HEIGHT - imgStartReady.getheight()) / 2, &imgStartReady);
+            }
                 break;
             case 2:
                 putimagePng3((WIN_WIDTH - imgStartSet.getwidth()) / 2,
