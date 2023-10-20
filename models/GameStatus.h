@@ -52,21 +52,6 @@ struct GameStatus {
      */
     int sunshine;
 
-    /**
-     * 卡槽图片, 最多6个
-     */
-    IMAGE imgCardsPics[6] = { 0 };
-
-    /**
-     * 卡槽图片对应的植物, 最多6个, 每个植物最多有21幅图片, 用于切换显示摇摆~
-     */
-    IMAGE* imgPlantsPics[6][21] = { nullptr };
-
-    /**
-     * 所选植物在卡槽的下标, -1表示未选
-     */
-     int choosePlantsIndex[6];
-
      /**
       * 所选植物
       */
