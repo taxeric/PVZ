@@ -1266,33 +1266,41 @@ void updateGame() {
 }
 
 void startMenuUI() {
-    IMAGE imgStartUIBg, imgAdventure0, imgAdventure1;
+    IMAGE imgStartUIBg, imgAdventure0, imgAdventure1, imgExit0, imgExit1;
     loadimage(&imgStartUIBg, BASE_RES_START_MENU_PATH);
     loadimage(&imgAdventure0, BASE_RES_ADVENTURE_0_PATH);
     loadimage(&imgAdventure1, BASE_RES_ADVENTURE_1_PATH);
+    loadimage(&imgExit0, BASE_RES_EXIT_GAME_0_PATH);
+    loadimage(&imgExit1, BASE_RES_EXIT_GAME_1_PATH);
+
     bool action_flag = false;
     bool move_flag = false;
+    bool exit_flag = false;
     while (true) {
         BeginBatchDraw();
 
         putimage(0, 0, &imgStartUIBg);
         putimagePng3(480, 80, move_flag ? &imgAdventure1 : &imgAdventure0);
+        putimagePng3(815, 515, exit_flag ? &imgExit1 : &imgExit0);
 
         ExMessage message{};
         if (peekmessage(&message)) {
-            if (message.message == WM_LBUTTONUP && action_flag) {
-                EndBatchDraw();
-                break;
-            } else if (message.message == WM_MOUSEMOVE) {
-                bool x_value = message.x > 480 && message.x < 780;
-                bool y_value = message.y > 80 && message.y < 160;
-                if (x_value && y_value) {
-                    move_flag = true;
-                    action_flag = true;
-                } else {
-                    move_flag = false;
-                    action_flag = false;
+            if (message.message == WM_LBUTTONUP) {
+                if (action_flag) {
+                    EndBatchDraw();
+                    break;
                 }
+                if (exit_flag) {
+                    exit(0);
+                }
+            } else if (message.message == WM_MOUSEMOVE) {
+                bool xStartBtnV = message.x > 480 && message.x < 780;
+                bool yStartBtnV = message.y > 80 && message.y < 160;
+                move_flag = xStartBtnV && yStartBtnV;
+                action_flag = xStartBtnV && yStartBtnV;
+                bool xExitBtnV = message.x > 815 && message.x < 860;
+                bool yExitBtnV = message.y > 515 && message.y < 540;
+                exit_flag = xExitBtnV && yExitBtnV;
             }
         }
 
