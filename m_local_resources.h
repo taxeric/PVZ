@@ -230,8 +230,10 @@ enum {
 #define SOUND_LOSE_MUSIC "../res/sounds/losemusic.mp3"
 // </editor-fold>
 
-void playSounds(const char* path);
-void playSoundsWaitCompleted(const char* path);
+void playSound(const char* path);
+void stopSound(const char* path);
+void playSoundUntilCompleted(const char* path);
+void playSoundRepeat(const char* path);
 
 void loadSunshineBallPics(int size);
 
@@ -286,6 +288,21 @@ void loadSnowPeaPics(int index, int size);
 void loadWallNutPics(int index, int size);
 void loadWallNutD1Pics(int index, int size);
 void loadWallNutD2Pics(int index, int size);
+
+/**
+ * 加载音效
+ */
+void loadSounds();
+
+/**
+ * 播放Main BGM
+ */
+void playMainBGM();
+
+/**
+ * 停止播放Main BGM
+ */
+void stopMainBGM();
 
 /**
  * 播放啃食植物音效
