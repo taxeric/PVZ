@@ -301,7 +301,7 @@ void gameInit() {
     curMovePlantPos = 0;
     curMovePlantCardSlotIndex = -1;
 
-    mciSendString("open ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
+    loadSounds();
 
     LOGFONT f;
     gettextstyle(&f);
@@ -524,7 +524,7 @@ void collectSunshine(ExMessage* message) {
                 sunshineBall->speed = 1.0;
 //                gross_sunshine += SUNSHINE_AMOUNT;
                 gameStatus[game_level].sunshine += SUNSHINE_AMOUNT;
-                playSounds(SOUND_COLLECT_POINT);
+                playSound(SOUND_COLLECT_POINT);
                 //设置偏移
                 float destX = CARD_SLOT_START_X;
                 float destY = CARD_SLOT_START_Y;
@@ -557,7 +557,7 @@ void userClickEvent() {
                     //检查是否点击了占位
                     if (message.x > card_slot_x_coordinate[x_index][0] && message.x < card_slot_x_coordinate[x_index][1]) {
                         if (plant->cd > 0) {
-                            playSounds(SOUND_WAITING_CD);
+                            playSound(SOUND_WAITING_CD);
                         } else {
                             //检查阳光
                             if (sunshine >= plant->sunshine) {
@@ -628,7 +628,7 @@ void userClickEvent() {
                              << "; current sunshine = " << gameStatus[game_level].sunshine
                              << endl;
                         int rm = rand() % 2;
-                        playSounds(rm == 0 ? SOUND_PLANT_1 : SOUND_PLANT_2);
+                        playSound(rm == 0 ? SOUND_PLANT_1 : SOUND_PLANT_2);
                     }
                 }
                 movePlantStatus = 0;
@@ -648,7 +648,7 @@ void userClickEvent() {
                     if (land->type > 0) {
                         land->type = 0;
                         clearPlantPointer(row, column);
-                        playSounds(SOUND_SHOVEL);
+                        playSound(SOUND_SHOVEL);
                     }
                     dragShovel = false;
                 }
@@ -829,7 +829,7 @@ void createZombies() {
             lastTime = 0;
             gameStatus[game_level].startCreateZombies = true;
             gameStatus[game_level].zombieFre = 40;
-            playSounds(SOUND_ZOMBIES_ARE_COMING);
+            playSound(SOUND_ZOMBIES_ARE_COMING);
         }
         return;
     }
@@ -922,7 +922,7 @@ void updateZombies() {
                         } else {
                             if (freezeActionCount > 4) {
                                 freezeActionCount = 0;
-                                playSounds(SOUND_FROZEN);
+                                playSound(SOUND_FROZEN);
                                 if (zombies[i].eating) {
                                     zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
                                 } else {
@@ -1062,7 +1062,7 @@ void checkBullet2Zombie() {
                 zombies[k].hp -= 10;//默认伤害
                 normalBullets[i].explosion = true;
                 normalBullets[i].speed = 0;
-                playSounds(SOUND_PLANT_SPLAT);
+                playSound(SOUND_PLANT_SPLAT);
                 if (zombies[k].hp <= 40 && zombies[k].hp > 0) {
                     zombies[k].lostHead = true;
                 } else if (zombies[k].hp <= 0) {
@@ -1160,7 +1160,7 @@ void checkZombie2Plant() {
                                         zombies[m].frameIndex = rand() % BASE_RES_PICS_AMOUNT;
                                     }
                                 }
-                                playSounds(SOUND_GULP);
+                                playSound(SOUND_GULP);
                                 landMap[row][column].hp = 0;
                                 landMap[row][column].caught = false;
                                 landMap[row][column].type = 0;
@@ -1197,7 +1197,7 @@ void potatoMineBoom() {
                     if (potatoMine->loadTimer >= 1000) {
                         potatoMine->loading = false;//装填完毕
                         landMap[row][column].frameIndex = 0;
-                        playSounds(SOUND_DIRT_RISE);
+                        playSound(SOUND_DIRT_RISE);
                     }
                 } else {
                     for (int i = 0; i < zombieMax; i ++) {
@@ -1212,7 +1212,7 @@ void potatoMineBoom() {
                                 zombies[i].hp = 0;
                                 zombies[i].speed = 0;
                                 zombies[i].frameIndex = 0;
-                                playSounds(SOUND_POTATO_BOOM);
+                                playSound(SOUND_POTATO_BOOM);
                                 if (potatoMine->explodeTimer < 10) {
                                     potatoMine->explodeTimer ++;
                                 } else {
@@ -1301,7 +1301,7 @@ void startMenuUI() {
 }
 
 void evilLaugh() {
-    playSoundsWaitCompleted(SOUND_EVIL_LAUGH);
+    playSoundUntilCompleted(SOUND_EVIL_LAUGH);
     Sleep(50);
     mciSendString("close ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
 }
@@ -1439,13 +1439,13 @@ void viewScene() {
                         if (plantIte != globalPlantMap.end()) {
                             gameStatus[game_level].choosePlants.push_back(plantIte->second);
                             cout << "event: [choose plant] (" << gameStatus[game_level].choosePlants.size() << ") plant index = " << plantIte->second->index << endl;
-                            playSounds(SOUND_FLOOP);
+                            playSound(SOUND_FLOOP);
                         }
                     }
                     choosePlantFlag = false;
                 }
                 if (startBtnFlag) {
-                    playSounds(SOUND_BTN_CLICK);
+                    playSound(SOUND_BTN_CLICK);
                     //等待一段时间
                     for (int i = 0; i < 100; i++) {
                         BeginBatchDraw();
@@ -1566,7 +1566,7 @@ void readySetPlant() {
             {
                 if (!playReadyMusic) {
                     playReadyMusic = true;
-                    playSounds(SOUND_READY_SET_PLANT);
+                    playSound(SOUND_READY_SET_PLANT);
                     Sleep(160);
                 }
                 putimagePng3((WIN_WIDTH - imgStartReady.getwidth()) / 2,
@@ -1643,6 +1643,8 @@ void createNewLevel(int level) {
     plantSlotDown();
     readySetPlant();
 
+    playMainBGM();
+
     int timer = 0;
     bool refreshFlag = true;
     int mGameStatus = GameIdle;
@@ -1667,6 +1669,7 @@ void createNewLevel(int level) {
             }
         }
     }
+    stopMainBGM();
     switch (mGameStatus) {
         case GameSuccess:
         {
@@ -1900,23 +1903,58 @@ void playChompSound() {
         if (atk2) {
             return;
         }
-        playSounds(SOUND_CHOMP_PLANT_2);
+        playSound(SOUND_CHOMP_PLANT_2);
     } else {
-        playSounds(SOUND_CHOMP_PLANT_1);
+        playSound(SOUND_CHOMP_PLANT_1);
     }
 }
 
-void playSounds(const char* path) {
+void loadSounds() {
+    mciSendString("open ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic.mp3", nullptr, 0, nullptr);
+}
+
+void playSound(const char* path) {
     char play[64] = "play ";
     char* result = strcat(play, path);
     int ret = mciSendString(result, 0, 0, 0);
     cout << "event: [play] - " << result << " ret -> " << ret << endl;
 }
 
-void playSoundsWaitCompleted(const char* path) {
+void stopSound(const char* path) {
+    char play[64] = "stop ";
+    char* result = strcat(play, path);
+    int ret = mciSendString(result, 0, 0, 0);
+    cout << "event: [stop play] - " << result << " ret -> " << ret << endl;
+}
+
+void playSoundUntilCompleted(const char* path) {
     char play[64] = "play ";
     char* temp = strcat(play, path);
     char* result = strcat(play, " wait");
     int ret = mciSendString(result, 0, 0, 0);
-    cout << "event: [play] - " << result << " ret -> " << ret << endl;
+    cout << "event: [play until completed] - " << result << " ret -> " << ret << endl;
+}
+
+void playSoundRepeat(const char* path) {
+    char play[64] = "play ";
+    char* temp = strcat(play, path);
+    char* result = strcat(play, " repeat");
+    int ret = mciSendString(result, 0, 0, 0);
+    cout << "event: [play repeat] - " << result << " ret -> " << ret << endl;
+}
+
+void playMainBGM() {
+    bool isPlaying = musicIsPlaying(SOUND_MAIN_MUSIC);
+    if (!isPlaying) {
+        playSoundRepeat(SOUND_MAIN_MUSIC);
+    }
+}
+
+void stopMainBGM() {
+    bool isPlaying = musicIsPlaying(SOUND_MAIN_MUSIC);
+    if (isPlaying) {
+        stopSound(SOUND_MAIN_MUSIC);
+        mciSendString("seek ../res/sounds/mainmusic.mp3 to 0", 0, 0, 0);
+    }
 }
