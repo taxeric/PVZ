@@ -63,6 +63,16 @@ struct GameStatus {
     int plantCount;
 
     /**
+     * 开始生成僵尸
+     */
+    bool startCreateZombies = false;
+
+    /**
+     * 僵尸生成间隔
+     */
+    int zombieFre = 0;
+
+    /**
      * 关卡状态
      */
     int levelStatus;
