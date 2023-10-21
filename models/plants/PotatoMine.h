@@ -11,11 +11,6 @@ class PotatoMine: public Plant {
 public:
 
     /**
-     * 是否装填
-     */
-    bool loading = true;
-
-    /**
      * 装填计次
      */
     int loadTimer = 0;
@@ -29,6 +24,11 @@ public:
      * 爆炸计次
      */
     int explodeTimer = 0;
+
+    /**
+     * 状态 0-idle 1-正在破土 2-破土完成, 装填完成
+     */
+    int potatoStatus = 0;
 
     PotatoMine(int index) {
         this->setName("土豆地雷");
@@ -50,8 +50,8 @@ public:
         actionPicCount = temp->actionPicCount;
         setName(temp->getName());
         setCoolDown(temp->getCoolDown());
-        loading = true;
         loadTimer = 0;
+        potatoStatus = 0;
         std::cout << "event: [new] " << temp->getName() << std::endl;
     }
 

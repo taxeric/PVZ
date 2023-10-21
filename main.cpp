@@ -136,7 +136,7 @@ IMAGE imgGlobalCardsPics[PLANTS_COUNT];
 //黑白化
 IMAGE imgGlobalCardsNoColorPics[PLANTS_COUNT];
 //全局植物图片, 游戏内的植物动图都通过它获取(如有不同形态,则在本身图片下标位置加上形态数量)
-IMAGE* imgGlobalPlantsPics[PLANTS_COUNT + 2][BASE_RES_PICS_AMOUNT];
+IMAGE* imgGlobalPlantsPics[PLANTS_COUNT + 3][BASE_RES_PICS_AMOUNT];
 
 //僵尸池
 struct Zombie zombies[10];
@@ -258,8 +258,9 @@ void gameInit() {
 //    loadChomperPics(12);
     loadSnowPeaPics(3, 15);
     loadWallNutPics(4, 16);
-    loadWallNutD1Pics(5, 11);
-    loadWallNutD2Pics(6, 15);
+    loadPotatoRiseDirtPics(5, 8);
+    loadWallNutD1Pics(6, 11);
+    loadWallNutD2Pics(7, 15);
 //    loadRepeatPeaShootPics(4, 14);
 
     //加载僵尸数据
@@ -358,15 +359,17 @@ void drawPlants() {
             if (landMap[row][column].type > 0) {
                 //获取当前选择的植物下标
                 int curPlantIndex = landMap[row][column].type - 1;
-                IMAGE* img = imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex];
+                IMAGE* img = imgGlobalPlantsPics[curPlantIndex][0];
                 int x = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + (LAND_MAP_SINGLE_WIDTH - img->getwidth()) / 2;
                 int y = LAND_MAP_START_Y + row * LAND_MAP_SINGLE_HEIGHT + (LAND_MAP_SINGLE_HEIGHT - img->getheight()) / 2;
                 switch (curPlantIndex) {
                     case POTATOMINE:
                     {
                         auto* potatoMine = dynamic_cast<PotatoMine *>(landMap[row][column].plant);
-                        if (potatoMine->loading) {
+                        if (potatoMine->potatoStatus == 0) {
                             putimagePng2(x, y, &imgPotatoMineLoading);
+                        } else if(potatoMine->potatoStatus == 1) {
+                            putimagePng2(x, y, imgGlobalPlantsPics[5][landMap[row][column].frameIndex]);
                         } else {
                             if (potatoMine->explode) {
                                 putimagePng2(x, y, &imgPotatoMineExplode);
@@ -380,9 +383,9 @@ void drawPlants() {
                     {
                         auto* wallNut = dynamic_cast<WallNut*>(landMap[row][column].plant);
                         if (wallNut->damageLevel == 1) {
-                            putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex + 1][landMap[row][column].frameIndex]);
-                        } else if (wallNut->damageLevel == 2) {
                             putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex + 2][landMap[row][column].frameIndex]);
+                        } else if (wallNut->damageLevel == 2) {
+                            putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex + 3][landMap[row][column].frameIndex]);
                         } else {
                             putimagePng2(x, y, imgGlobalPlantsPics[curPlantIndex][landMap[row][column].frameIndex]);
                         }
@@ -693,11 +696,23 @@ void updatePlants() {
                         if (wallNut->damageLevel == 0 && imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
                             landMap[row][column].frameIndex = 0;
                         }
-                        if (wallNut->damageLevel == 1 && imgGlobalPlantsPics[plantIndex + 1][frameIndex] == nullptr) {
+                        if (wallNut->damageLevel == 1 && imgGlobalPlantsPics[plantIndex + 2][frameIndex] == nullptr) {
                             landMap[row][column].frameIndex = 0;
                         }
-                        if (wallNut->damageLevel == 2 && imgGlobalPlantsPics[plantIndex + 2][frameIndex] == nullptr) {
+                        if (wallNut->damageLevel == 2 && imgGlobalPlantsPics[plantIndex + 3][frameIndex] == nullptr) {
                             landMap[row][column].frameIndex = 0;
+                        }
+                    } else if (plantType - 1 == POTATOMINE) {
+                        auto *potato = dynamic_cast<PotatoMine *>(landMap[row][column].plant);
+                        if (potato->potatoStatus == 0 && imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                        }
+                        if (potato->potatoStatus == 2 && imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                        }
+                        if (potato->potatoStatus == 1 && imgGlobalPlantsPics[5][frameIndex] == nullptr) {
+                            landMap[row][column].frameIndex = 0;
+                            potato->potatoStatus = 2;
                         }
                     } else {
                         if (imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
@@ -1192,16 +1207,16 @@ void potatoMineBoom() {
         for (int column = 0; column < LAND_MAP_COLUMN; column++) {
             if (landMap[row][column].type - 1 == POTATOMINE) {
                 auto* potatoMine = dynamic_cast<PotatoMine*>(landMap[row][column].plant);
-                if (potatoMine->loading) {
+                if (potatoMine->potatoStatus == 0) {
                     potatoMine->loadTimer ++;
                     if (potatoMine->loadTimer >= 1000) {
-                        potatoMine->loading = false;//装填完毕
+                        potatoMine->potatoStatus = 1;
                         landMap[row][column].frameIndex = 0;
                         playSound(SOUND_DIRT_RISE);
                     }
                 } else {
                     for (int i = 0; i < zombieMax; i ++) {
-                        if (zombies[i].isUsed && zombies[i].row == row) {
+                        if (zombies[i].isUsed && zombies[i].row == row && !potatoMine->explode) {
                             //植物所占像素值范围
                             int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
                             int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
@@ -1635,6 +1650,9 @@ void createNewLevel(int level) {
     gameStatus[game_level].killCount = 0;
     gameStatus[game_level].zombieMaxCount = 1;
     gameStatus[game_level].sunshine = 200;
+    for (auto & choosePlant : gameStatus[game_level].choosePlants) {
+        delete choosePlant;
+    }
     gameStatus[game_level].choosePlants.clear();
 
     resetAllStatus();
@@ -1745,6 +1763,19 @@ void loadPotatoMinePics(int index, int size) {
     char fname[64];
     for (int i = 0; i < size; i ++) {
         sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_POTATOMINE_PATH, "PotatoMine_", i);
+        if (fileExist(fname)) {
+            imgGlobalPlantsPics[index][i] = new IMAGE;
+            loadimage(imgGlobalPlantsPics[index][i], fname);
+        } else {
+            break;
+        }
+    }
+}
+
+void loadPotatoRiseDirtPics(int index, int size) {
+    char fname[128];
+    for (int i = 0; i < size; i ++) {
+        sprintf_s(fname, sizeof(fname), "%s%s%d.png", RES_PIC_POTATOMINE_RISE_DIRT_PATH, "Digger_rising_dirt", i + 1);
         if (fileExist(fname)) {
             imgGlobalPlantsPics[index][i] = new IMAGE;
             loadimage(imgGlobalPlantsPics[index][i], fname);
