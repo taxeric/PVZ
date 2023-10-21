@@ -116,6 +116,8 @@ enum {
 #define RES_CARD_PIC_POTATOMINE_CD "../res/graphics/Cards/NoColor/card_potatomine_m.png"
 //土豆地雷idle图片路径
 #define RES_PIC_POTATOMINE_PATH "../res/graphics/Plants/PotatoMine/PotatoMine/"
+//土豆地雷破土而出图片路径
+#define RES_PIC_POTATOMINE_RISE_DIRT_PATH "../res/graphics/Plants/PotatoMine/RiseDirt/"
 //土豆地雷init图片
 #define RES_PIC_POTATOMINE_INIT "../res/graphics/Plants/PotatoMine/PotatoMineInit/PotatoMineInit_0.png"
 //土豆地雷boom图片
@@ -281,6 +283,7 @@ void loadZombieBoomDiePics(int size);
 void loadSunflowerPics(int index, int size);
 void loadPeashooterPics(int index, int size);
 void loadPotatoMinePics(int index, int size);
+void loadPotatoRiseDirtPics(int index, int size);
 void loadJalapenoPics(int index, int size);
 void loadChomperPics(int index, int size);
 void loadRepeatPeaShootPics(int index, int size);
