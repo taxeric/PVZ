@@ -816,9 +816,9 @@ void createZombies() {
     if (gameStatus[game_level].zombieCount >= gameStatus[game_level].zombieMaxCount) {
         return;
     }
+
     //从15秒后开始创建僵尸
-    static bool startCreateZombies = false;
-    if (!startCreateZombies) {
+    if (!gameStatus[game_level].startCreateZombies) {
         long long curTime = time(nullptr);
         static long long lastTime = 0;
         if (lastTime == 0) {
@@ -826,18 +826,19 @@ void createZombies() {
             return;
         }
         if (curTime - lastTime > 15) {
-            startCreateZombies = true;
+            lastTime = 0;
+            gameStatus[game_level].startCreateZombies = true;
+            gameStatus[game_level].zombieFre = 40;
             playSounds(SOUND_ZOMBIES_ARE_COMING);
         }
         return;
     }
 
-    static int zombieFre = 40;//僵尸生成间隔
     static int count = 0;
     count ++;
-    if (count > zombieFre) {
+    if (count > gameStatus[game_level].zombieFre) {
         count = 0;
-        zombieFre = rand() % 200 + 600;
+        gameStatus[game_level].zombieFre = rand() % 200 + 600;
         int i;
         int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
         for (i = 0; i < zombieMax && zombies[i].isUsed; i ++);
@@ -1219,6 +1220,7 @@ void potatoMineBoom() {
                                     landMap[row][column].hp = 0;
                                     clearPlantPointer(row, column);
                                 }
+                                break;
                             }
                         }
                     }
@@ -1341,6 +1343,8 @@ void viewScene() {
     bool removePlantFlag = false;
     //卡槽仓库起点y
     int cardSlotStorePlantY = imgBarHeight + 40;
+    //本次关卡可选择的植物数量
+    int plantCount = 2;
     while (true) {
         BeginBatchDraw();
         putimage(xMin, 0, &imgBg);
@@ -1352,9 +1356,18 @@ void viewScene() {
         //资源有限, 就手动存5个了先2333~~~
         putimage(GAME_PLANT_CARD_SLOT_STORE_X, cardSlotStorePlantY, &imgGlobalCardsPics[0]);
         putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH, cardSlotStorePlantY, &imgGlobalCardsPics[1]);
-        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 2, cardSlotStorePlantY, &imgGlobalCardsPics[2]);
-        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 3, cardSlotStorePlantY, &imgGlobalCardsPics[3]);
-        putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 4, cardSlotStorePlantY, &imgGlobalCardsPics[4]);
+        if (game_level > 0) {
+            putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 2, cardSlotStorePlantY, &imgGlobalCardsPics[2]);
+            plantCount ++;
+        }
+        if (game_level > 1) {
+            putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 3, cardSlotStorePlantY, &imgGlobalCardsPics[3]);
+            plantCount ++;
+        }
+        if (game_level > 2) {
+            putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 4, cardSlotStorePlantY, &imgGlobalCardsPics[4]);
+            plantCount ++;
+        }
         for (int k = 0; k < 9; k ++) {
 //            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
             putimagePng2(
@@ -1373,7 +1386,7 @@ void viewScene() {
         if (peekmessage(&msg)) {
             if (msg.message == WM_LBUTTONDOWN) {
                 //下面的卡槽仓库点击坐标
-                bool x_c_p_1 = msg.x > GAME_PLANT_CARD_SLOT_STORE_X && msg.x < GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 5;
+                bool x_c_p_1 = msg.x > GAME_PLANT_CARD_SLOT_STORE_X && msg.x < GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * plantCount;
                 bool y_c_p_1 = msg.y > cardSlotStorePlantY && msg.y < cardSlotStorePlantY + BASE_CARD_HEIGHT;
                 //上面的已选择的植物卡槽点击坐标
                 bool x_c_p_2 = msg.x > GAME_PLANT_CARD_SLOT_CHOICE_X && msg.x < GAME_PLANT_CARD_SLOT_CHOICE_X + BASE_CARD_WIDTH * gameStatus[game_level].choosePlants.size();
@@ -1512,19 +1525,18 @@ void plantSlotDown() {
 void readySetPlant() {
     static int curGameLevel = 0;
     static int setPlantTimer = 0;
+    static bool playReadyMusic = false;
+    static long long lastTime = 0;
     if (curGameLevel != game_level) {
         setPlantTimer = 0;
         curGameLevel = game_level;
+        playReadyMusic = false;
+        lastTime = 0;
     }
-    if (setPlantTimer > 3) {
-        return;
-    }
-    static bool playReadyMusic = false;
     while (true) {
         BeginBatchDraw();
         auto now = chrono::system_clock::now();
         long long curTime = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch()).count();
-        static long long lastTime = 0;
         if (lastTime == 0) {
             lastTime = curTime;
         }
@@ -1591,6 +1603,9 @@ void resetAllStatus() {
         for (int column = 0; column < LAND_MAP_COLUMN; column++) {
             if (landMap[row][column].type > 0) {
                 landMap[row][column].type = 0;
+                landMap[row][column].caught = false;
+                landMap[row][column].frameIndex = 0;
+                landMap[row][column].hp = 0;
                 clearPlantPointer(row, column);
             }
         }
@@ -1618,8 +1633,8 @@ void createNewLevel(int level) {
     gameStatus[game_level].levelStatus = GameIdle;
     gameStatus[game_level].level = game_level + 1;
     gameStatus[game_level].killCount = 0;
-    gameStatus[game_level].zombieMaxCount = 10 * (level + 1);
-    gameStatus[game_level].sunshine = 50;
+    gameStatus[game_level].zombieMaxCount = 1;
+    gameStatus[game_level].sunshine = 200;
     gameStatus[game_level].choosePlants.clear();
 
     resetAllStatus();
