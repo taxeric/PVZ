@@ -346,6 +346,7 @@ void drawCardSlot() {
         }
         IMAGE* img;
         Plant* cardSlotPlant = gameStatus[game_level].choosePlants[i];
+
         if (cardSlotPlant->cd <= 0) {
             img = &imgGlobalCardsPics[cardSlotPlant->index];
         } else {
@@ -1751,13 +1752,11 @@ void createNewLevel(int level) {
     gameStatus[game_level].levelStatus = GameIdle;
     gameStatus[game_level].level = game_level + 1;
     gameStatus[game_level].killCount = 0;
+    gameStatus[game_level].zombieCount = 0;
     gameStatus[game_level].zombieMaxCount = 1;
+    gameStatus[game_level].zombieFre = 0;
     gameStatus[game_level].sunshine = 200;
     gameStatus[game_level].startCreateZombies = false;
-    gameStatus[game_level].zombieFre = 0;
-    for (auto & choosePlant : gameStatus[game_level].choosePlants) {
-        delete choosePlant;
-    }
     gameStatus[game_level].choosePlants.clear();
 
     resetAllStatus();
