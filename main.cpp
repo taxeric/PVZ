@@ -168,6 +168,10 @@ IMAGE imgPotatoMineExplode;
 IMAGE imgStartReady, imgStartSet, imgStartPlant;
 //铲子&铲子槽&大铲子
 IMAGE imgShovel, imgShovelSlot, imgShovelHi;
+//结算
+IMAGE imgGameVictory0, imgGameVictory1, imgGameVictory2, imgGameVictory3, imgGameVictory4;
+IMAGE imgGameLoose0, imgGameLoose1, imgGameLoose2;
+IMAGE imgZombiesWon;
 
 int getDelay() {
     static unsigned long long lastTime = 0;
@@ -296,6 +300,15 @@ void gameInit() {
     loadimage(&imgShovel, RES_PIC_SHOVEL_PATH);
     loadimage(&imgShovelSlot, RES_PIC_SHOVEL_BANK_PATH);
     loadimage(&imgShovelHi, RES_PIC_SHOVEL_MOVE_PATH);
+    loadimage(&imgGameVictory0, RES_PIC_VICTORY_0);
+    loadimage(&imgGameVictory1, RES_PIC_VICTORY_1);
+    loadimage(&imgGameVictory2, RES_PIC_VICTORY_2);
+    loadimage(&imgGameVictory3, RES_PIC_VICTORY_3);
+    loadimage(&imgGameVictory4, RES_PIC_VICTORY_4);
+    loadimage(&imgGameLoose0, RES_PIC_LOOSE_0);
+    loadimage(&imgGameLoose1, RES_PIC_LOOSE_1);
+    loadimage(&imgGameLoose2, RES_PIC_LOOSE_2);
+    loadimage(&imgZombiesWon, RES_PIC_ZOMBIES_WON);
 
     initgraph(WIN_WIDTH, WIN_HEIGHT, 1);
 
@@ -1537,14 +1550,12 @@ void plantSlotDown() {
 /**
  * 新关卡-准备安放植物
  */
-void readySetPlant() {
-    static int curGameLevel = 0;
+void readySetPlant(bool newLevel) {
     static int setPlantTimer = 0;
     static bool playReadyMusic = false;
     static long long lastTime = 0;
-    if (curGameLevel != game_level) {
+    if (newLevel) {
         setPlantTimer = 0;
-        curGameLevel = game_level;
         playReadyMusic = false;
         lastTime = 0;
     }
@@ -1626,6 +1637,10 @@ void resetAllStatus() {
         }
     }
 
+    for (const auto &item: globalPlantMap) {
+        item.second->cd = 0;
+    }
+
     //土地
     memset(landMap, 0, sizeof(landMap));
     //加载僵尸数据
@@ -1636,6 +1651,94 @@ void resetAllStatus() {
 
     curMovePlantPos = 0;
     curMovePlantCardSlotIndex = -1;
+}
+
+int showLevelResult(bool success, bool hasMore) {
+    int vw = (WIN_WIDTH - imgGameVictory0.getwidth()) / 2;
+    int vh = (WIN_HEIGHT - imgGameVictory0.getheight()) / 2;
+    int lw = (WIN_WIDTH - imgGameLoose0.getwidth()) / 2;
+    int lh = (WIN_HEIGHT - imgGameLoose0.getheight()) / 2;
+    bool nextLevelFlag = false;
+    bool restartFlag = false;
+    bool menuFlag = false;
+    int result = 0;
+    while (true) {
+        BeginBatchDraw();
+        if (success) {
+            if (hasMore) {
+                if (nextLevelFlag && !menuFlag) {
+                    putimagePng3(vw, vh, &imgGameVictory1);
+                } else if (menuFlag && !nextLevelFlag) {
+                    putimagePng3(vw, vh, &imgGameVictory2);
+                } else if (!nextLevelFlag && !menuFlag) {
+                    putimagePng3(vw, vh, &imgGameVictory0);
+                }
+            } else {
+                putimagePng3(vw, vh, menuFlag ? &imgGameVictory4 : &imgGameVictory3);
+            }
+        } else {
+            if (restartFlag && !menuFlag) {
+                putimagePng3(lw, lh, &imgGameLoose1);
+            } else if (menuFlag && !restartFlag) {
+                putimagePng3(lw, lh, &imgGameLoose2);
+            } else if (!restartFlag && !menuFlag) {
+                putimagePng3(lw, lh, &imgGameLoose0);
+            }
+        }
+
+        ExMessage msg{};
+        if (peekmessage(&msg)) {
+            if (msg.message == WM_MOUSEMOVE) {
+                if (success) {
+                    int nextLevelX = msg.x > vw + 190 && msg.x < vw + 600;
+                    int nextLevelY = msg.y > vh + 260 && msg.y < vh + 345;
+                    nextLevelFlag = nextLevelX && nextLevelY;
+                    if (nextLevelFlag) {
+                        menuFlag = false;
+                    } else {
+                        int menuX = nextLevelX;
+                        int menuY = msg.y > vh + 380 && msg.y < vh + 465;
+                        menuFlag = menuX && menuY;
+                    }
+                } else {
+                    int restartX = msg.x > lw + 175 && msg.x < lw + 585;
+                    int restartY = msg.y > lh + 280 && msg.y < lh + 365;
+                    restartFlag = restartX && restartY;
+                    if (restartFlag) {
+                        menuFlag = false;
+                    } else {
+                        int menuX = restartX;
+                        int menuY = msg.y > lh + 425 && msg.y < lh + 505;
+                        menuFlag = menuX && menuY;
+                    }
+                }
+            } else if (msg.message == WM_LBUTTONUP) {
+                if (menuFlag) {
+                    result = ClickMenu;
+                    EndBatchDraw();
+                    break;
+                } else {
+                    if (success) {
+                        if (nextLevelFlag) {
+                            result = ClickNextLevel;
+                            EndBatchDraw();
+                            break;
+                        }
+                    } else {
+                        if (restartFlag) {
+                            result = ClickRestart;
+                            EndBatchDraw();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        EndBatchDraw();
+    }
+
+    return result;
 }
 
 /**
@@ -1650,6 +1753,8 @@ void createNewLevel(int level) {
     gameStatus[game_level].killCount = 0;
     gameStatus[game_level].zombieMaxCount = 1;
     gameStatus[game_level].sunshine = 200;
+    gameStatus[game_level].startCreateZombies = false;
+    gameStatus[game_level].zombieFre = 0;
     for (auto & choosePlant : gameStatus[game_level].choosePlants) {
         delete choosePlant;
     }
@@ -1659,7 +1764,7 @@ void createNewLevel(int level) {
 
     viewScene();
     plantSlotDown();
-    readySetPlant();
+    readySetPlant(true);
 
     playMainBGM();
 
@@ -1688,22 +1793,32 @@ void createNewLevel(int level) {
         }
     }
     stopMainBGM();
+    int result = 0;
     switch (mGameStatus) {
         case GameSuccess:
         {
             if (game_level < GAME_LEVEL_MAX_COUNT - 1) {
-                createNewLevel(game_level + 1);
+                playSoundUntilCompleted(SOUND_WIN_MUSIC);
+                result = showLevelResult(true, true);
             } else {
-                cout << "game completed!" << endl;
-                exit(0);
+                playSoundUntilCompleted(SOUND_WIN_MUSIC);
+                result = showLevelResult(true, false);
             }
         }
             break;
         case GameFailed:
-            cout << "game failed" << endl;
-            createNewLevel(game_level);
+            playSoundUntilCompleted(SOUND_LOSE_MUSIC);
+            result = showLevelResult(false, false);
             break;
         default:break;
+    }
+
+    if (result == ClickMenu) {
+        startMenuUI();
+    } else if (result == ClickNextLevel) {
+        createNewLevel(game_level + 1);
+    } else if (result == ClickRestart) {
+        createNewLevel(game_level);
     }
 }
 
