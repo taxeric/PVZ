@@ -16,6 +16,12 @@ enum {
     GameFailed,
 };
 
+enum {
+    ClickMenu,
+    ClickNextLevel,
+    ClickRestart,
+};
+
 struct GameStatus {
     /**
      * 关卡
