@@ -224,6 +224,7 @@ void gameInit() {
 //    globalPlantMap.insert(make_pair(REPEATERPEA, new RepeaterPea("", "", 0, REPEATERPEA)));
     globalPlantMap.insert(make_pair(WALLNUT, new WallNut(WALLNUT)));
 
+    //加载阳光数据
     memset(sunshineBalls, 0, sizeof(sunshineBalls));
     //加载阳光图片
     loadSunshineBallPics(BASE_RES_PICS_AMOUNT);
@@ -383,7 +384,7 @@ void drawPlants() {
                         if (potatoMine->potatoStatus == 0) {
                             putimagePng2(x, y, &imgPotatoMineLoading);
                         } else if(potatoMine->potatoStatus == 1) {
-                            putimagePng2(x, y, imgGlobalPlantsPics[5][landMap[row][column].frameIndex]);
+                            putimagePng2(x - 18, y + 18, imgGlobalPlantsPics[5][landMap[row][column].frameIndex]);
                         } else {
                             if (potatoMine->explode) {
                                 putimagePng2(x, y, &imgPotatoMineExplode);
@@ -1466,9 +1467,9 @@ void viewScene() {
                     if (!isExist) {
                         //从全局map中获取对应植物
                         if (plantIte != globalPlantMap.end()) {
+                            playSound(SOUND_FLOOP);
                             gameStatus[game_level].choosePlants.push_back(plantIte->second);
                             cout << "event: [choose plant] (" << gameStatus[game_level].choosePlants.size() << ") plant index = " << plantIte->second->index << endl;
-                            playSound(SOUND_FLOOP);
                         }
                     }
                     choosePlantFlag = false;
@@ -1644,9 +1645,11 @@ void resetAllStatus() {
 
     //土地
     memset(landMap, 0, sizeof(landMap));
-    //加载僵尸数据
+    //阳光
+    memset(sunshineBalls, 0, sizeof(sunshineBalls));
+    //僵尸
     memset(zombies, 0, sizeof(zombies));
-    //加载子弹数据
+    //子弹
     memset(normalBullets, 0, sizeof(normalBullets));
     memset(snowBullets, 0, sizeof(snowBullets));
 
@@ -1753,9 +1756,9 @@ void createNewLevel(int level) {
     gameStatus[game_level].level = game_level + 1;
     gameStatus[game_level].killCount = 0;
     gameStatus[game_level].zombieCount = 0;
-    gameStatus[game_level].zombieMaxCount = 1;
+    gameStatus[game_level].zombieMaxCount = 10 * (level + 1);
     gameStatus[game_level].zombieFre = 0;
-    gameStatus[game_level].sunshine = 200;
+    gameStatus[game_level].sunshine = 50;
     gameStatus[game_level].startCreateZombies = false;
     gameStatus[game_level].choosePlants.clear();
 
