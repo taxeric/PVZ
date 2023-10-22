@@ -1814,6 +1814,8 @@ void createNewLevel(int level) {
 
     if (result == ClickMenu) {
         startMenuUI();
+        evilLaugh();
+        createNewLevel(0);
     } else if (result == ClickNextLevel) {
         createNewLevel(game_level + 1);
     } else if (result == ClickRestart) {
