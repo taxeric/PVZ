@@ -185,6 +185,17 @@ enum {
 #define RES_PIC_START_SET "../res/graphics/Screen/Ready/StartSet.png"
 //植物!!!
 #define RES_PIC_START_PLANT "../res/graphics/Screen/Ready/StartPlant.png"
+
+//结算
+#define RES_PIC_VICTORY_0 "../res/graphics/Screen/Result/GameVictory0.png"
+#define RES_PIC_VICTORY_1 "../res/graphics/Screen/Result/GameVictory1.png"
+#define RES_PIC_VICTORY_2 "../res/graphics/Screen/Result/GameVictory2.png"
+#define RES_PIC_VICTORY_3 "../res/graphics/Screen/Result/GameVictory3.png"
+#define RES_PIC_VICTORY_4 "../res/graphics/Screen/Result/GameVictory4.png"
+#define RES_PIC_LOOSE_0 "../res/graphics/Screen/Result/GameLoose0.png"
+#define RES_PIC_LOOSE_1 "../res/graphics/Screen/Result/GameLoose1.png"
+#define RES_PIC_LOOSE_2 "../res/graphics/Screen/Result/GameLoose2.png"
+#define RES_PIC_ZOMBIES_WON "../res/graphics/Screen/Result/ZombiesWon.png"
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="音频文件">
