@@ -1434,7 +1434,7 @@ void viewScene() {
             } else if (msg.message == WM_MOUSEMOVE) {
                 bool x_value_start_btn = msg.x > 155 && msg.x < 310;
                 bool y_value_start_btn = msg.y > startBtnY1 && msg.y < startBtnY2;
-                if (x_value_start_btn && y_value_start_btn) {
+                if (x_value_start_btn && y_value_start_btn && !gameStatus[game_level].choosePlants.empty()) {
                     startBtnFlag = true;
                 } else {
                     startBtnFlag = false;
@@ -1809,6 +1809,7 @@ void createNewLevel(int level) {
         }
             break;
         case GameFailed:
+            putimagePng3((WIN_WIDTH - imgZombiesWon.getwidth()) / 2, (WIN_HEIGHT - imgZombiesWon.getheight()) / 2, &imgZombiesWon);
             playSoundUntilCompleted(SOUND_LOSE_MUSIC);
             result = showLevelResult(false, false);
             break;
