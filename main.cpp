@@ -1224,25 +1224,27 @@ void potatoMineBoom() {
                 auto* potatoMine = dynamic_cast<PotatoMine*>(landMap[row][column].plant);
                 if (potatoMine->potatoStatus == 0) {
                     potatoMine->loadTimer ++;
-                    if (potatoMine->loadTimer >= 1000) {
+                    if (potatoMine->loadTimer >= potatoMine->getIdleTimer()) {
                         potatoMine->potatoStatus = 1;
                         landMap[row][column].frameIndex = 0;
                         playSound(SOUND_DIRT_RISE);
                     }
                 } else {
                     for (int i = 0; i < zombieMax; i ++) {
-                        if (zombies[i].isUsed && zombies[i].row == row && !potatoMine->explode) {
+                        if (zombies[i].isUsed && zombies[i].row == row) {
                             //植物所占像素值范围
                             int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
                             int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
                             int zombieX = zombies[i].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
                             if (zombieX >= plantX1 && zombieX <= plantX2) {
-                                potatoMine->explode = true;
-                                zombies[i].dead = true;
-                                zombies[i].hp = 0;
-                                zombies[i].speed = 0;
-                                zombies[i].frameIndex = 0;
-                                playSound(SOUND_POTATO_BOOM);
+                                if (!potatoMine->explode) {
+                                    potatoMine->explode = true;
+                                    zombies[i].dead = true;
+                                    zombies[i].hp = 0;
+                                    zombies[i].speed = 0;
+                                    zombies[i].frameIndex = 0;
+                                    playSound(SOUND_POTATO_BOOM);
+                                }
                                 if (potatoMine->explodeTimer < 10) {
                                     potatoMine->explodeTimer ++;
                                 } else {
