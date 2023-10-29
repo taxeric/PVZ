@@ -8,6 +8,13 @@
 #include "../Plant.h"
 
 class PotatoMine: public Plant {
+private:
+
+    /**
+     * idle计次
+     */
+    int idleTimer = 0;
+
 public:
 
     /**
@@ -32,7 +39,7 @@ public:
 
     PotatoMine(int index) {
         this->setName("土豆地雷");
-        this->setCoolDown(250);
+        this->setCoolDown(150);
         this->cd = 0;
         this->hp = 100;
         this->sunshine = 25;
@@ -52,6 +59,7 @@ public:
         setCoolDown(temp->getCoolDown());
         loadTimer = 0;
         potatoStatus = 0;
+        idleTimer = 1000;
         std::cout << "event: [new] " << temp->getName() << std::endl;
     }
 
@@ -62,6 +70,10 @@ public:
     }
 
     ~PotatoMine() override= default;
+
+    int getIdleTimer() const {
+        return idleTimer;
+    }
 };
 
 #endif //PVZ_POTATOMINE_H
