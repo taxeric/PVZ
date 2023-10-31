@@ -26,6 +26,7 @@
 
 using namespace std;
 
+//窗口大小
 #define WIN_WIDTH 900
 #define WIN_HEIGHT 600
 //游戏界面偏移
@@ -185,6 +186,12 @@ int getDelay() {
     return ret;
 }
 
+/**
+ * 创建植物指针
+ * @param choicePlantFromCardSlot 当前移动的植物卡槽下标
+ * @param type 当前移动的植物类型
+ * @return
+ */
 Plant* generatePlantByType(Plant* choicePlantFromCardSlot, int type) {
     if (choicePlantFromCardSlot == nullptr) {
         return nullptr;
@@ -202,6 +209,11 @@ Plant* generatePlantByType(Plant* choicePlantFromCardSlot, int type) {
     return plant;
 }
 
+/**
+ * 移除土地植物指针
+ * @param row 行
+ * @param column 列
+ */
 void clearPlantPointer(int row, int column) {
     if (row >= LAND_MAP_ROW || row < 0 || column >= LAND_MAP_COLUMN || column < 0) {
         return;
@@ -503,6 +515,9 @@ void drawDragEvent() {
     }
 }
 
+/**
+ * 刷新窗口, 主要用于UI绘制
+ */
 void updateWindow() {
     //缓冲
     BeginBatchDraw();
@@ -527,6 +542,10 @@ void updateWindow() {
     EndBatchDraw();
 }
 
+/**
+ * 收集阳光事件
+ * @param message 鼠标事件
+ */
 void collectSunshine(ExMessage* message) {
     int count = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < count; i ++) {
@@ -555,6 +574,9 @@ void collectSunshine(ExMessage* message) {
     }
 }
 
+/**
+ * 用户点击事件
+ */
 void userClickEvent() {
     ExMessage message{};
     static int movePlantStatus = 0;
@@ -624,6 +646,7 @@ void userClickEvent() {
                     int row = (message.y - LAND_MAP_START_Y) / LAND_MAP_SINGLE_HEIGHT;
                     int column = (message.x - LAND_MAP_START_X) / LAND_MAP_SINGLE_WIDTH;
                     struct Land* land = &landMap[row][column];
+                    //种下一个新植物
                     if (land->type <= 0) {
                         land->type = curMovePlantPos;
                         land->frameIndex = 0;
@@ -653,6 +676,7 @@ void userClickEvent() {
                 curMovePlantPos = 0;
                 curMovePlantCardSlotIndex = -1;
             }
+            //如果是拖动铲子
             if (dragShovel) {
                 //土地x范围
                 int x_value = message.x > LAND_MAP_START_X && message.x < LAND_MAP_END_X;
@@ -675,6 +699,9 @@ void userClickEvent() {
     }
 }
 
+/**
+ * 更新植物cd
+ */
 void updatePlantsCD() {
     static int timer = 0;
     timer ++;
@@ -694,11 +721,14 @@ void updatePlantsCD() {
     }
 }
 
+/**
+ * 更新植物状态
+ */
 void updatePlants() {
-    static int count = 0;
-    count ++;
-    if (count > 3) {
-        count = 0;
+    static int timer = 0;
+    timer ++;
+    if (timer > 3) {
+        timer = 0;
         for (int row = 0; row < LAND_MAP_ROW; row++) {
             for (int column = 0; column < LAND_MAP_COLUMN; column++) {
                 int plantType = landMap[row][column].type;
@@ -717,7 +747,7 @@ void updatePlants() {
                         if (wallNut->damageLevel == 2 && imgGlobalPlantsPics[plantIndex + 3][frameIndex] == nullptr) {
                             landMap[row][column].frameIndex = 0;
                         }
-                    } else if (plantType - 1 == POTATOMINE) {
+                    } else if (plantType - 1 == POTATOMINE) {//土豆地雷有三种样式
                         auto *potato = dynamic_cast<PotatoMine *>(landMap[row][column].plant);
                         if (potato->potatoStatus == 0 && imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
                             landMap[row][column].frameIndex = 0;
@@ -730,6 +760,7 @@ void updatePlants() {
                             potato->potatoStatus = 2;
                         }
                     } else {
+                        //其他植物
                         if (imgGlobalPlantsPics[plantIndex][frameIndex] == nullptr) {
                             landMap[row][column].frameIndex = 0;
                         }
@@ -740,13 +771,16 @@ void updatePlants() {
     }
 }
 
+/**
+ * 创建阳光(包含向日葵生成和自然生成)
+ */
 void createSunshine() {
-    static int count = 0;
+    static int timer = 0;
     static int fre = 80;//自然掉落的阳光生成间隔
-    count ++;
-    if (count >= fre) {
+    timer ++;
+    if (timer >= fre) {
         fre = 600 + rand() % 20;
-        count = 0;
+        timer = 0;
         int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
         int i;
         for (i = 0; i < ballMax && sunshineBalls[i].isUsed; i ++);
@@ -765,6 +799,7 @@ void createSunshine() {
         sunshineBall->status = SUNSHINE_DOWN;
     }
 
+    //向日葵生成
     int sunshineBallMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int row = 0; row < LAND_MAP_ROW; row ++) {
         for (int column = 0; column < LAND_MAP_COLUMN; column ++) {
@@ -774,10 +809,12 @@ void createSunshine() {
                     landMap[row][column].timer = 0;
                     int k;
                     for (k = 0; k < sunshineBallMax && sunshineBalls[k].isUsed; k ++);
+                    //找到阳光池中未使用的阳光
                     if (k >= sunshineBallMax) {
                         return;
                     }
                     IMAGE* sunflowerImg = imgGlobalPlantsPics[SUNFLOWER][0];
+                    //初始化阳光数据
                     struct SunshineBall* sunshineBall = &sunshineBalls[k];
                     sunshineBall->isUsed = true;
                     sunshineBall->x = landMap[row][column].x;
@@ -792,14 +829,20 @@ void createSunshine() {
     }
 }
 
+/**
+ * 更新阳光掉落状态
+ */
 void updateSunshine() {
     int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
     for (int i = 0; i < ballMax; i ++) {
         struct SunshineBall* sunshineBall = &sunshineBalls[i];
         if (sunshineBalls[i].isUsed) {
+            //更新阳光绘制的图片下标
             sunshineBall->frameIndex = (sunshineBalls[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
             int status = sunshineBall->status;
+            //如果是自然生成落下的阳光
             if (status == SUNSHINE_DOWN) {
+                //检查y坐标是否到终点
                 if (sunshineBall->y >= sunshineBall->destY) {
                     sunshineBall->timer = 0;
                     sunshineBall->status = SUNSHINE_GROUND;
@@ -807,6 +850,7 @@ void updateSunshine() {
                     sunshineBall->y += 2;
                 }
             } else if (status == SUNSHINE_PRODUCT) {
+                //如果是向日葵生成的阳光
                 if (sunshineBall->x >= sunshineBall->destX) {
                     if (sunshineBall->y >= sunshineBall->destY) {
                         sunshineBall->timer = 0;
@@ -818,6 +862,7 @@ void updateSunshine() {
                     sunshineBall->x ++;
                 }
             } else if (status == SUNSHINE_GROUND) {
+                //如果阳光球已经落到地上, 开始计次
                 sunshineBall->timer ++;
                 if (sunshineBall->timer > 100) {
                     sunshineBall->isUsed = false;
@@ -825,6 +870,7 @@ void updateSunshine() {
                 }
             }
         } else if (sunshineBall->xOffset > 0) {
+            //阳光球飞跃
             //设置偏移
             float destX = CARD_SLOT_START_X;
             float destY = CARD_SLOT_START_Y;
@@ -834,6 +880,7 @@ void updateSunshine() {
 
             sunshineBall->x -= sunshineBall->xOffset;
             sunshineBall->y -= sunshineBall->yOffset;
+            //如果飞跃动作的[x方向偏移未<=卡槽起点x] 或 [y方向偏移未<=卡槽起点y], 说明还需要飞跃
             if (sunshineBall->x <= CARD_SLOT_START_X || sunshineBall->y <= CARD_SLOT_START_Y) {
                 sunshineBall->xOffset = 0;
                 sunshineBall->yOffset = 0;
@@ -842,7 +889,11 @@ void updateSunshine() {
     }
 }
 
+/**
+ * 创建僵尸
+ */
 void createZombies() {
+    //如果已经达到关卡的最大数量
     if (gameStatus[game_level].zombieCount >= gameStatus[game_level].zombieMaxCount) {
         return;
     }
@@ -873,6 +924,7 @@ void createZombies() {
         int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
         for (i = 0; i < zombieMax && zombies[i].isUsed; i ++);
         if (i < zombieMax) {
+            //初始化僵尸数据
             struct Zombie* zombie = &zombies[i];
             memset(&zombies[i], 0, sizeof(zombies[i]));
             zombie->isUsed = true;
@@ -894,25 +946,33 @@ void createZombies() {
     }
 }
 
+/**
+ * 更新僵尸状态
+ */
 void updateZombies() {
     int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
-    static int count = 0;
-    count ++;
-    if (count > 4) {
-        count = 0;
+    static int timer = 0;
+    timer ++;
+    if (timer > 4) {
+        timer = 0;
         for (int i = 0; i < zombieMax; i ++) {
+            //如果僵尸正在使用
             if (zombies[i].isUsed) {
+                //判定是否在攻击植物的状态
                 if (!zombies[i].eating) {
                     if ((zombies[i].frameIndex > 0 && zombies[i].frameIndex < 14) ||
                         (zombies[i].frameIndex > 16 && zombies[i].frameIndex < BASE_RES_PICS_AMOUNT - 2)) {
-                        static int freezeCount = 0;
+                        static int freezeTimer = 0;
+                        //判定是否受到寒冰射手的攻击
                         if (zombies[i].freeze) {
-                            freezeCount ++;
-                            if (freezeCount > 4) {
-                                freezeCount = 0;
+                            freezeTimer ++;
+                            //移动减缓
+                            if (freezeTimer > 4) {
+                                freezeTimer = 0;
                                 zombies[i].x -= zombies[i].speed;
                             }
                         } else {
+                            //正常移动
                             zombies[i].x -= zombies[i].speed;
                         }
                     }
@@ -926,14 +986,16 @@ void updateZombies() {
         }
     }
 
-    static int zombieActionCount = 0;
-    zombieActionCount ++;
-    if (zombieActionCount > 4 * 2) {
-        zombieActionCount = 0;
+    static int zombieActionTimer = 0;
+    zombieActionTimer ++;
+    if (zombieActionTimer > 8) {
+        zombieActionTimer = 0;
         for (int i = 0; i < zombieMax; i ++) {
             if (zombies[i].isUsed) {
+                //判定僵尸是否死亡
                 if (zombies[i].dead) {
                     zombies[i].frameIndex ++;
+                    //判定僵尸死亡动作
                     if (zombies[i].frameIndex >= AMOUNT_ZOMBIE_DEAD_PIC_2) {
                         zombies[i].isUsed = false;
                         gameStatus[game_level].killCount ++;
@@ -942,17 +1004,19 @@ void updateZombies() {
                         }
                     }
                 } else {
-                    static int freezeActionCount = 0;
+                    static int freezeActionTimer = 0;
                     if (zombies[i].freeze && zombies[i].freezeTimer > 0) {
-                        freezeActionCount ++;
+                        freezeActionTimer ++;
                         zombies[i].freezeTimer -= 1;
+                        //判定是否冻结状态
                         if (zombies[i].freezeTimer <= 0) {
                             zombies[i].freezeTimer = 8;
                             zombies[i].freeze = false;
                         } else {
-                            if (freezeActionCount > 4) {
-                                freezeActionCount = 0;
+                            if (freezeActionTimer > 4) {
+                                freezeActionTimer = 0;
                                 playSound(SOUND_FROZEN);
+                                //通过判定是否攻击植物来切花图片下标
                                 if (zombies[i].eating) {
                                     zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
                                 } else {
@@ -973,6 +1037,9 @@ void updateZombies() {
     }
 }
 
+/**
+ * 射手射击僵尸
+ */
 void plantsShoot() {
     int lines[LAND_MAP_ROW] = {0};
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
@@ -991,10 +1058,10 @@ void plantsShoot() {
                 continue;
             }
             if (landMap[row][column].type - 1 == PEASHOOT && lines[row]) {
-                static int count = 0;
-                count ++;
-                if (count > 120) {//越大子弹间隔越大
-                    count = 0;
+                static int timer = 0;
+                timer ++;
+                if (timer > 120) {//越大子弹间隔越大
+                    timer = 0;
                     int k;
                     //找到可用的子弹
                     for (k = 0; k < normalBulletMax && normalBullets[k].isUsed; k ++);
@@ -1040,6 +1107,9 @@ void plantsShoot() {
     }
 }
 
+/**
+ * 更新子弹状态
+ */
 void updateBullets() {
     int normalCountMax = sizeof(normalBullets) / sizeof(normalBullets[0]);
     int snowCountMax = sizeof(snowBullets) / sizeof(snowBullets[0]);
@@ -1073,6 +1143,9 @@ void updateBullets() {
     }
 }
 
+/**
+ * 子弹打到僵尸身上
+ */
 void checkBullet2Zombie() {
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
 
@@ -1136,6 +1209,9 @@ void checkBullet2Zombie() {
     }
 }
 
+/**
+ * 僵尸攻击植物
+ */
 void checkZombie2Plant() {
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
     for (int i = 0; i < zombieCount; i ++) {
@@ -1216,12 +1292,18 @@ void checkZombie2Plant() {
     }
 }
 
+/**
+ * 土豆地雷爆炸检查
+ */
 void potatoMineBoom() {
     int zombieMax = sizeof(zombies) / sizeof(zombies[0]);
     for (int row = 0; row < LAND_MAP_ROW; row ++) {
         for (int column = 0; column < LAND_MAP_COLUMN; column++) {
+            //如果植物是土豆地雷
             if (landMap[row][column].type - 1 == POTATOMINE) {
+                //强转
                 auto* potatoMine = dynamic_cast<PotatoMine*>(landMap[row][column].plant);
+                //如果状态是idle
                 if (potatoMine->potatoStatus == 0) {
                     potatoMine->loadTimer ++;
                     if (potatoMine->loadTimer >= potatoMine->getIdleTimer()) {
@@ -1231,12 +1313,15 @@ void potatoMineBoom() {
                     }
                 } else {
                     for (int i = 0; i < zombieMax; i ++) {
+                        //找到对应行且存活的僵尸
                         if (zombies[i].isUsed && zombies[i].row == row) {
                             //植物所占像素值范围
                             int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
                             int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
                             int zombieX = zombies[i].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
+                            //判断是否接触
                             if (zombieX >= plantX1 && zombieX <= plantX2) {
+                                //如果土豆地雷还没爆炸
                                 if (!potatoMine->explode) {
                                     potatoMine->explode = true;
                                     zombies[i].dead = true;
@@ -1245,6 +1330,7 @@ void potatoMineBoom() {
                                     zombies[i].frameIndex = 0;
                                     playSound(SOUND_POTATO_BOOM);
                                 }
+                                //这里的if用于显示爆炸的图片
                                 if (potatoMine->explodeTimer < 10) {
                                     potatoMine->explodeTimer ++;
                                 } else {
@@ -1262,6 +1348,9 @@ void potatoMineBoom() {
     }
 }
 
+/**
+ * 碰撞检测
+ */
 void collisionCheck() {
     //子弹碰撞僵尸
     checkBullet2Zombie();
@@ -1289,6 +1378,9 @@ void updateGame() {
     collisionCheck();
 }
 
+/**
+ * 游戏开始页面
+ */
 void startMenuUI() {
     IMAGE imgStartUIBg, imgAdventure0, imgAdventure1, imgExit0, imgExit1;
     loadimage(&imgStartUIBg, BASE_RES_START_MENU_PATH);
@@ -1297,8 +1389,11 @@ void startMenuUI() {
     loadimage(&imgExit0, BASE_RES_EXIT_GAME_0_PATH);
     loadimage(&imgExit1, BASE_RES_EXIT_GAME_1_PATH);
 
+    //[开始]标志位
     bool action_flag = false;
+    //鼠标移动(在开始和退出范围内移动)
     bool move_flag = false;
+    //[退出]标志位
     bool exit_flag = false;
     while (true) {
         BeginBatchDraw();
@@ -1332,6 +1427,9 @@ void startMenuUI() {
     }
 }
 
+/**
+ * 邪恶的笑
+ */
 void evilLaugh() {
     playSoundUntilCompleted(SOUND_EVIL_LAUGH);
     Sleep(50);
@@ -1344,6 +1442,7 @@ void evilLaugh() {
 void viewScene() {
     int xMin = WIN_WIDTH - imgBg.getwidth();
     int zombiesStandCoordinate[9][2] = {0 };
+    //随机设置僵尸坐标
     for (int x = 0; x < 9; x ++) {
         double r = 1.0 * rand() / RAND_MAX;
         int rx = (int) (r * (800 - 600) + 500);
@@ -1370,8 +1469,11 @@ void viewScene() {
     int startBtnY2 = startBtnY1 + 30;
     IMAGE startBtn;
     loadimage(&startBtn, BASE_RES_CHOOSE_PLANTS_START_BTN_PATH);
+    //开始战斗标志位
     bool startBtnFlag = false;
+    //选择植物标志位
     bool choosePlantFlag = false;
+    //移除所选植物标志位
     bool removePlantFlag = false;
     //卡槽仓库起点y
     int cardSlotStorePlantY = imgBarHeight + 40;
@@ -1400,6 +1502,7 @@ void viewScene() {
             putimage(GAME_PLANT_CARD_SLOT_STORE_X + BASE_CARD_WIDTH * 4, cardSlotStorePlantY, &imgGlobalCardsPics[4]);
             plantCount ++;
         }
+        //摆放僵尸
         for (int k = 0; k < 9; k ++) {
 //            int frameIndex = rand() % AMOUNT_ZOMBIE_STAND_PIC_1;
             putimagePng2(
@@ -1409,6 +1512,7 @@ void viewScene() {
             );
         }
 
+        //显示所选植物
         for (int i = 0; i < gameStatus[game_level].choosePlants.size(); i ++) {
             Plant* plant = gameStatus[game_level].choosePlants[i];
             putimage(GAME_PLANT_CARD_SLOT_CHOICE_X + BASE_CARD_WIDTH * i, CARD_START_Y, &imgGlobalCardsPics[plant->index]);
@@ -1558,6 +1662,7 @@ void readySetPlant(bool newLevel) {
     static int setPlantTimer = 0;
     static bool playReadyMusic = false;
     static long long lastTime = 0;
+    //如果是新关卡, 则重置状态
     if (newLevel) {
         setPlantTimer = 0;
         playReadyMusic = false;
@@ -1591,6 +1696,7 @@ void readySetPlant(bool newLevel) {
             lastTime = curTime;
             setPlantTimer++;
         }
+        //按条件显示 ready set plants
         switch (setPlantTimer) {
             case 1:
             {
@@ -1622,11 +1728,15 @@ void readySetPlant(bool newLevel) {
         }
         EndBatchDraw();
     }
+    //设置关卡状态为Running
     if (gameStatus[game_level].levelStatus == GameIdle) {
         gameStatus[game_level].levelStatus = GameRunning;
     }
 }
 
+/**
+ * 重置其他全部状态
+ */
 void resetAllStatus() {
 
     for (int row = 0; row < LAND_MAP_ROW; row ++) {
@@ -1659,17 +1769,28 @@ void resetAllStatus() {
     curMovePlantCardSlotIndex = -1;
 }
 
+/**
+ * 显示结算画面
+ *
+ * @param success 是否通过
+ * @param hasMore 是否有下一关
+ * @return 点击类型: ClickMenu ClickNextLevel ClickRestart
+ */
 int showLevelResult(bool success, bool hasMore) {
     int vw = (WIN_WIDTH - imgGameVictory0.getwidth()) / 2;
     int vh = (WIN_HEIGHT - imgGameVictory0.getheight()) / 2;
     int lw = (WIN_WIDTH - imgGameLoose0.getwidth()) / 2;
     int lh = (WIN_HEIGHT - imgGameLoose0.getheight()) / 2;
+    //点击下一关的标志位
     bool nextLevelFlag = false;
+    //点击重新开始关卡的标志位
     bool restartFlag = false;
+    //点击主菜单的标志位
     bool menuFlag = false;
     int result = 0;
     while (true) {
         BeginBatchDraw();
+        //按参数显示结算图片
         if (success) {
             if (hasMore) {
                 if (nextLevelFlag && !menuFlag) {
@@ -1710,6 +1831,7 @@ int showLevelResult(bool success, bool hasMore) {
                     int restartX = msg.x > lw + 175 && msg.x < lw + 585;
                     int restartY = msg.y > lh + 280 && msg.y < lh + 365;
                     restartFlag = restartX && restartY;
+                    //这边如果点击了重新开始关卡就不判断主菜单的标志位了
                     if (restartFlag) {
                         menuFlag = false;
                     } else {
@@ -1748,8 +1870,8 @@ int showLevelResult(bool success, bool hasMore) {
 }
 
 /**
- * 从0开始
- * @param level
+ * 创建新关卡(第一关level为0)
+ * @param level 关卡, 从0开始
  */
 void createNewLevel(int level) {
     cout << "event: create new game level " << level << endl;
