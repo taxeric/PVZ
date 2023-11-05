@@ -233,8 +233,16 @@ enum {
 #define SOUND_WAITING_CD "../res/sounds/buzzer.mp3"
 //破土而出
 #define SOUND_DIRT_RISE "../res/sounds/dirt_rise.mp3"
+//过场动画bgm
+#define SOUND_READY_MUSIC "../res/sounds/readymusic.mp3"
 //main bgm
 #define SOUND_MAIN_MUSIC "../res/sounds/mainmusic.mp3"
+#define SOUND_MAIN_MUSIC2 "../res/sounds/mainmusic2.mp3"
+#define SOUND_MAIN_MUSIC3 "../res/sounds/mainmusic3.mp3"
+#define SOUND_MAIN_MUSIC4 "../res/sounds/mainmusic4.mp3"
+#define SOUND_MAIN_MUSIC5 "../res/sounds/mainmusic5.mp3"
+#define SOUND_MAIN_MUSIC6 "../res/sounds/mainmusic6.mp3"
+#define SOUND_MAIN_MUSIC7 "../res/sounds/mainmusic7.mp3"
 //准备! 安放! 植物!
 #define SOUND_READY_SET_PLANT "../res/sounds/readysetplant.mp3"
 //僵尸低吼....
