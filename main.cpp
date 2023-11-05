@@ -929,9 +929,10 @@ void createZombies() {
             memset(&zombies[i], 0, sizeof(zombies[i]));
             zombie->isUsed = true;
             zombie->frameIndex = 0;
-            zombie->x = WIN_WIDTH;
+            zombie->x = WIN_WIDTH - 80;//这里减去僵尸pic前方的透明占位像素
             zombie->row = rand() % LAND_MAP_ROW;
             zombie->y = LAND_MAP_START_Y * 2 + (zombie->row) * LAND_MAP_SINGLE_HEIGHT;
+            zombie->groan = false;
             zombie->speed = 1;
             zombie->hp = 100;
             zombie->head = false;
@@ -974,6 +975,10 @@ void updateZombies() {
                         } else {
                             //正常移动
                             zombies[i].x -= zombies[i].speed;
+                        }
+                        if (zombies[i].x <= LAND_MAP_END_X && !zombies[i].groan) {
+                            playGroan();
+                            zombies[i].groan = true;
                         }
                     }
                 }
@@ -2181,6 +2186,30 @@ void playChompSound() {
         playSound(SOUND_CHOMP_PLANT_2);
     } else {
         playSound(SOUND_CHOMP_PLANT_1);
+    }
+}
+
+void playGroan() {
+    int groanSoundIndex = rand() % 6;
+    switch (groanSoundIndex) {
+        case 0:
+            playSound(SOUND_GROAN);
+            break;
+        case 1:
+            playSound(SOUND_GROAN2);
+            break;
+        case 2:
+            playSound(SOUND_GROAN3);
+            break;
+        case 3:
+            playSound(SOUND_GROAN4);
+            break;
+        case 4:
+            playSound(SOUND_GROAN5);
+            break;
+        default:
+            playSound(SOUND_GROAN6);
+            break;
     }
 }
 
