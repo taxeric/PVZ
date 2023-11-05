@@ -563,7 +563,7 @@ void collectSunshine(ExMessage* message) {
                 sunshineBall->speed = 1.0;
 //                gross_sunshine += SUNSHINE_AMOUNT;
                 gameStatus[game_level].sunshine += SUNSHINE_AMOUNT;
-                playSound(SOUND_COLLECT_POINT);
+                stopAndPlaySound(SOUND_COLLECT_POINT);
                 //设置偏移
                 float destX = CARD_SLOT_START_X;
                 float destY = CARD_SLOT_START_Y;
@@ -614,6 +614,7 @@ void userClickEvent() {
                                 }
                             } else {
                                 setcolor(RED);
+                                playSound(SOUND_WAITING_CD);
                             }
                         }
                         break;
@@ -2245,6 +2246,16 @@ void stopSound(const char* path) {
     char* result = strcat(play, path);
     int ret = mciSendString(result, 0, 0, 0);
     cout << "event: [stop play] - " << result << " ret -> " << ret << endl;
+}
+
+void stopAndPlaySound(const char* path) {
+    char play[64] = "stop ";
+    char* stopResult = strcat(play, path);
+    int stopRet = mciSendString(stopResult, 0, 0, 0);
+    memset(play, '\0', sizeof(play));
+    strcat(play, "play ");
+    char* result = strcat(play, path);
+    int ret = mciSendString(result, 0, 0, 0);
 }
 
 void playSoundUntilCompleted(const char* path) {

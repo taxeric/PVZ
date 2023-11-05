@@ -252,6 +252,7 @@ enum {
 
 void playSound(const char* path);
 void stopSound(const char* path);
+void stopAndPlaySound(const char* path);
 void playSoundUntilCompleted(const char* path);
 void playSoundRepeat(const char* path);
 
