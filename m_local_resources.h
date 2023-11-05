@@ -237,6 +237,13 @@ enum {
 #define SOUND_MAIN_MUSIC "../res/sounds/mainmusic.mp3"
 //准备! 安放! 植物!
 #define SOUND_READY_SET_PLANT "../res/sounds/readysetplant.mp3"
+//僵尸低吼....
+#define SOUND_GROAN "../res/sounds/groan.mp3"
+#define SOUND_GROAN2 "../res/sounds/groan2.mp3"
+#define SOUND_GROAN3 "../res/sounds/groan3.mp3"
+#define SOUND_GROAN4 "../res/sounds/groan4.mp3"
+#define SOUND_GROAN5 "../res/sounds/groan5.mp3"
+#define SOUND_GROAN6 "../res/sounds/groan6.mp3"
 //win!
 #define SOUND_WIN_MUSIC "../res/sounds/winmusic.mp3"
 //lose
@@ -322,5 +329,10 @@ void stopMainBGM();
  * 播放啃食植物音效
  */
 void playChompSound();
+
+/**
+ * 播放僵尸低吼音效
+ */
+void playGroan();
 
 #endif //PVZ_M_LOCAL_RESOURCES_H
