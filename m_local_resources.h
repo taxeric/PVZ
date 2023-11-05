@@ -325,6 +325,11 @@ void loadWallNutD2Pics(int index, int size);
 void loadSounds();
 
 /**
+ * 获取Main BGM
+ */
+const char* obtainMainBGM(int index);
+
+/**
  * 播放Main BGM
  */
 void playMainBGM();
@@ -333,6 +338,11 @@ void playMainBGM();
  * 停止播放Main BGM
  */
 void stopMainBGM();
+
+/**
+ * 停止播放ready BGM
+ */
+void stopReadyBGM();
 
 /**
  * 播放啃食植物音效

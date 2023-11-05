@@ -599,7 +599,7 @@ void userClickEvent() {
                     //检查是否点击了占位
                     if (message.x > card_slot_x_coordinate[x_index][0] && message.x < card_slot_x_coordinate[x_index][1]) {
                         if (plant->cd > 0) {
-                            playSound(SOUND_WAITING_CD);
+                            stopAndPlaySound(SOUND_WAITING_CD);
                         } else {
                             //检查阳光
                             if (sunshine >= plant->sunshine) {
@@ -614,7 +614,7 @@ void userClickEvent() {
                                 }
                             } else {
                                 setcolor(RED);
-                                playSound(SOUND_WAITING_CD);
+                                stopAndPlaySound(SOUND_WAITING_CD);
                             }
                         }
                         break;
@@ -880,7 +880,7 @@ void updateSunshine() {
             } else if (status == SUNSHINE_GROUND) {
                 //如果阳光球已经落到地上, 开始计次
                 sunshineBall->timer ++;
-                if (sunshineBall->timer > 100) {
+                if (sunshineBall->timer > 200) {
                     sunshineBall->isUsed = false;
                     sunshineBall->timer = 0;
                 }
@@ -1064,7 +1064,7 @@ void updateZombies() {
 void plantsShoot() {
     int lines[LAND_MAP_ROW] = {0};
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
-    int dangerX = LAND_MAP_END_X - PLACEHOLDER_ZOMBIE_PIC_WIDTH/* - imgZombiesPics[0].getwidth()*/;//手动减去僵尸png前方的占位透明像素
+    int dangerX = LAND_MAP_END_X/* - imgZombiesPics[0].getwidth()*/;
     int normalBulletMax = sizeof(normalBullets) / sizeof(normalBullets[0]);
     int snowBulletMax = sizeof(snowBullets) / sizeof(snowBullets[0]);
     for (int i = 0; i < zombieCount; i ++) {
@@ -1897,8 +1897,11 @@ int showLevelResult(bool success, bool hasMore) {
 void createNewLevel(int level) {
     cout << "event: create new game level " << level << endl;
     game_level = level;
+    int randomBGMIndex = rand() % 8;
     gameStatus[game_level].levelStatus = GameIdle;
     gameStatus[game_level].level = game_level + 1;
+    gameStatus[game_level].mainBGMIndex = randomBGMIndex;
+    gameStatus[game_level].mainBGM = obtainMainBGM(randomBGMIndex);
     gameStatus[game_level].killCount = 0;
     gameStatus[game_level].zombieCount = 0;
     gameStatus[game_level].zombieMaxCount = 10 * (level + 1);
@@ -1909,12 +1912,14 @@ void createNewLevel(int level) {
 
     resetAllStatus();
 
+    playSoundRepeat(SOUND_READY_MUSIC);
     viewScene();
     plantSlotDown();
+    stopReadyBGM();
+
     readySetPlant(true);
 
     playMainBGM();
-
     int timer = 0;
     bool refreshFlag = true;
     int mGameStatus = GameIdle;
@@ -2232,59 +2237,105 @@ void playGroan() {
 void loadSounds() {
     mciSendString("open ../res/sounds/evillaugh.mp3", nullptr, 0, nullptr);
     mciSendString("open ../res/sounds/mainmusic.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/readymusic.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic2.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic3.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic4.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic5.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic6.mp3", nullptr, 0, nullptr);
+    mciSendString("open ../res/sounds/mainmusic7.mp3", nullptr, 0, nullptr);
 }
 
 void playSound(const char* path) {
     char play[64] = "play ";
-    char* result = strcat(play, path);
-    int ret = mciSendString(result, 0, 0, 0);
-    cout << "event: [play] - " << result << " ret -> " << ret << endl;
+    strcat(play, path);
+    int ret = mciSendString(play, 0, 0, 0);
+    cout << "event: [play] - " << play << " ret -> " << ret << endl;
 }
 
 void stopSound(const char* path) {
     char play[64] = "stop ";
-    char* result = strcat(play, path);
-    int ret = mciSendString(result, 0, 0, 0);
-    cout << "event: [stop play] - " << result << " ret -> " << ret << endl;
+    strcat(play, path);
+    int ret = mciSendString(play, 0, 0, 0);
+    cout << "event: [stop play] - " << play << " ret -> " << ret << endl;
 }
 
 void stopAndPlaySound(const char* path) {
     char play[64] = "stop ";
-    char* stopResult = strcat(play, path);
-    int stopRet = mciSendString(stopResult, 0, 0, 0);
+    strcat(play, path);
+    int stopRet = mciSendString(play, 0, 0, 0);
     memset(play, '\0', sizeof(play));
     strcat(play, "play ");
-    char* result = strcat(play, path);
-    int ret = mciSendString(result, 0, 0, 0);
+    strcat(play, path);
+    int ret = mciSendString(play, 0, 0, 0);
 }
 
 void playSoundUntilCompleted(const char* path) {
     char play[64] = "play ";
-    char* temp = strcat(play, path);
-    char* result = strcat(play, " wait");
-    int ret = mciSendString(result, 0, 0, 0);
-    cout << "event: [play until completed] - " << result << " ret -> " << ret << endl;
+    strcat(play, path);
+    strcat(play, " wait");
+    int ret = mciSendString(play, 0, 0, 0);
+    cout << "event: [play until completed] - " << play << " ret -> " << ret << endl;
 }
 
 void playSoundRepeat(const char* path) {
     char play[64] = "play ";
-    char* temp = strcat(play, path);
-    char* result = strcat(play, " repeat");
-    int ret = mciSendString(result, 0, 0, 0);
-    cout << "event: [play repeat] - " << result << " ret -> " << ret << endl;
+    strcat(play, path);
+    strcat(play, " repeat");
+    int ret = mciSendString(play, 0, 0, 0);
+    cout << "event: [play repeat] - " << play << " ret -> " << ret << endl;
+}
+
+const char* obtainMainBGM(int index) {
+    const char* link;
+    switch (index) {
+        case 0:
+            link = SOUND_MAIN_MUSIC;
+            break;
+        case 1:
+            link = SOUND_MAIN_MUSIC2;
+            break;
+        case 2:
+            link = SOUND_MAIN_MUSIC3;
+            break;
+        case 3:
+            link = SOUND_MAIN_MUSIC4;
+            break;
+        case 4:
+            link = SOUND_MAIN_MUSIC5;
+            break;
+        case 5:
+            link = SOUND_MAIN_MUSIC6;
+            break;
+        default:
+            link = SOUND_MAIN_MUSIC7;
+            break;
+    }
+    return link;
 }
 
 void playMainBGM() {
-    bool isPlaying = musicIsPlaying(SOUND_MAIN_MUSIC);
+    bool isPlaying = musicIsPlaying(gameStatus[game_level].mainBGM);
     if (!isPlaying) {
-        playSoundRepeat(SOUND_MAIN_MUSIC);
+        playSoundRepeat(gameStatus[game_level].mainBGM);
     }
 }
 
 void stopMainBGM() {
-    bool isPlaying = musicIsPlaying(SOUND_MAIN_MUSIC);
+    bool isPlaying = musicIsPlaying(gameStatus[game_level].mainBGM);
     if (isPlaying) {
-        stopSound(SOUND_MAIN_MUSIC);
-        mciSendString("seek ../res/sounds/mainmusic.mp3 to 0", 0, 0, 0);
+        stopSound(gameStatus[game_level].mainBGM);
+        char seek[64] = "seek ";
+        strcat(seek, gameStatus[game_level].mainBGM);
+        strcat(seek, " to 0");
+        mciSendString(seek, 0, 0, 0);
+    }
+}
+
+void stopReadyBGM() {
+    bool isPlaying = musicIsPlaying(SOUND_READY_MUSIC);
+    if (isPlaying) {
+        stopSound(SOUND_READY_MUSIC);
+        mciSendString("seek ../res/sounds/readymusic.mp3 to 0", 0, 0, 0);
     }
 }

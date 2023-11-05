@@ -82,6 +82,16 @@ struct GameStatus {
      * 关卡状态
      */
     int levelStatus;
+
+    /**
+     * 关卡bgm下标
+     */
+    int mainBGMIndex;
+
+    /**
+     * 关卡bgm
+     */
+    const char* mainBGM;
 };
 
 #endif //PVZ_GAMESTATUS_H
