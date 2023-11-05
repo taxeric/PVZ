@@ -89,6 +89,8 @@ using namespace std;
 //僵尸死亡图片数量
 #define AMOUNT_ZOMBIE_DEAD_PIC_1 17
 #define AMOUNT_ZOMBIE_DEAD_PIC_2 9
+//僵尸图片前方透明占位像素宽度
+#define PLACEHOLDER_ZOMBIE_PIC_WIDTH 80
 
 //僵尸冻结帧计次(当受到寒冰子弹攻击时开始计次)
 #define TIMER_ZOMBIE_FREEZE_FRAME 5
@@ -772,14 +774,14 @@ void updatePlants() {
 }
 
 /**
- * 创建阳光(包含向日葵生成和自然生成)
+ * 自然随机落下阳光
  */
-void createSunshine() {
+void sunshineRandomDown() {
     static int timer = 0;
     static int fre = 80;//自然掉落的阳光生成间隔
     timer ++;
     if (timer >= fre) {
-        fre = 600 + rand() % 20;
+        fre = 800 + rand() % 20;
         timer = 0;
         int ballMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
         int i;
@@ -798,24 +800,29 @@ void createSunshine() {
         sunshineBall->yOffset = 0;
         sunshineBall->status = SUNSHINE_DOWN;
     }
+}
 
-    //向日葵生成
+/**
+ * 向日葵生成阳光
+ */
+ void sunshineSunflowerCreate() {
     int sunshineBallMax = sizeof(sunshineBalls) / sizeof(sunshineBalls[0]);
-    for (int row = 0; row < LAND_MAP_ROW; row ++) {
-        for (int column = 0; column < LAND_MAP_COLUMN; column ++) {
+    for (int row = 0; row < LAND_MAP_ROW; row++) {
+        for (int column = 0; column < LAND_MAP_COLUMN; column++) {
             if (landMap[row][column].type - 1 == SUNFLOWER) {
-                landMap[row][column].timer ++;
-                if (landMap[row][column].timer > 600) {//向日葵生成的阳光间隔
-                    landMap[row][column].timer = 0;
+                auto* sunflower = dynamic_cast<Sunflower*>(landMap[row][column].plant);
+                sunflower->fre ++;
+                if (sunflower->fre > sunflower->getCreateFre()) {//向日葵生成的阳光间隔
+                    sunflower->fre = 0;
                     int k;
-                    for (k = 0; k < sunshineBallMax && sunshineBalls[k].isUsed; k ++);
+                    for (k = 0; k < sunshineBallMax && sunshineBalls[k].isUsed; k++);
                     //找到阳光池中未使用的阳光
                     if (k >= sunshineBallMax) {
                         return;
                     }
-                    IMAGE* sunflowerImg = imgGlobalPlantsPics[SUNFLOWER][0];
+                    IMAGE *sunflowerImg = imgGlobalPlantsPics[SUNFLOWER][0];
                     //初始化阳光数据
-                    struct SunshineBall* sunshineBall = &sunshineBalls[k];
+                    struct SunshineBall *sunshineBall = &sunshineBalls[k];
                     sunshineBall->isUsed = true;
                     sunshineBall->x = landMap[row][column].x;
                     sunshineBall->y = landMap[row][column].y;
@@ -827,6 +834,14 @@ void createSunshine() {
             }
         }
     }
+ }
+
+/**
+ * 创建阳光(包含向日葵生成和自然生成)
+ */
+void createSunshine() {
+    sunshineRandomDown();
+    sunshineSunflowerCreate();
 }
 
 /**
@@ -929,7 +944,7 @@ void createZombies() {
             memset(&zombies[i], 0, sizeof(zombies[i]));
             zombie->isUsed = true;
             zombie->frameIndex = 0;
-            zombie->x = WIN_WIDTH - 80;//这里减去僵尸pic前方的透明占位像素
+            zombie->x = WIN_WIDTH - PLACEHOLDER_ZOMBIE_PIC_WIDTH;//这里减去僵尸pic前方的透明占位像素
             zombie->row = rand() % LAND_MAP_ROW;
             zombie->y = LAND_MAP_START_Y * 2 + (zombie->row) * LAND_MAP_SINGLE_HEIGHT;
             zombie->groan = false;
@@ -982,7 +997,7 @@ void updateZombies() {
                         }
                     }
                 }
-                if (zombies[i].x < LAND_MAP_START_X - 80) {//僵尸进入房子了🧠
+                if (zombies[i].x < LAND_MAP_START_X - (PLACEHOLDER_ZOMBIE_PIC_WIDTH + 40)) {//僵尸进入房子了🧠
                     //game over ~~~
                     cout << "game over ~~~" << endl;
                     gameStatus[game_level].levelStatus = GameFailed;
@@ -1048,7 +1063,7 @@ void updateZombies() {
 void plantsShoot() {
     int lines[LAND_MAP_ROW] = {0};
     int zombieCount = sizeof(zombies) / sizeof(zombies[0]);
-    int dangerX = LAND_MAP_END_X - 80/* - imgZombiesPics[0].getwidth()*/;//手动减去僵尸png前方的占位透明像素
+    int dangerX = LAND_MAP_END_X - PLACEHOLDER_ZOMBIE_PIC_WIDTH/* - imgZombiesPics[0].getwidth()*/;//手动减去僵尸png前方的占位透明像素
     int normalBulletMax = sizeof(normalBullets) / sizeof(normalBullets[0]);
     int snowBulletMax = sizeof(snowBullets) / sizeof(snowBullets[0]);
     for (int i = 0; i < zombieCount; i ++) {
