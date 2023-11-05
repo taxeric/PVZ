@@ -20,10 +20,15 @@ struct Zombie {
     bool dead;
 
     /**
+     * 是否低吼过
+     */
+    bool groan;
+
+    /**
      * 当前攻击的植物行列
      */
-     int attackRow;
-     int attackColumn;
+    int attackRow;
+    int attackColumn;
 };
 
 #endif //PVZ_ZOMBIE_H
