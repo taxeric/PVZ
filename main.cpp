@@ -1242,7 +1242,7 @@ void checkZombie2Plant() {
                 if (landMap[row][column].type > 0) {
                     //植物右侧像素值
                     int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
-                    int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
+                    int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH - 15;
                     int zombieX = zombies[i].x + LAND_MAP_SINGLE_WIDTH;
                     if (zombieX > plantX1 && zombieX < plantX2) {
                         static int count = 0;
@@ -1338,7 +1338,7 @@ void potatoMineBoom() {
                         if (zombies[i].isUsed && zombies[i].row == row) {
                             //植物所占像素值范围
                             int plantX1 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + 10;
-                            int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH;
+                            int plantX2 = LAND_MAP_START_X + column * LAND_MAP_SINGLE_WIDTH + LAND_MAP_SINGLE_WIDTH - 15;
                             int zombieX = zombies[i].x + 80;//僵尸图片实际需要碰撞的位置起点x, 因为图片尺寸需要手动加上偏移
                             //判断是否接触
                             if (zombieX >= plantX1 && zombieX <= plantX2) {
