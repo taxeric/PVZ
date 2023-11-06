@@ -959,10 +959,29 @@ void createZombies() {
             zombie->attackRow = -1;
             zombie->attackColumn = -1;
             zombie->freeze = false;
-            zombie->freezeTimer = 8;
+            zombie->freezeTimer = 40;
+            zombie->freezeWalkActionTimer = 0;
+            zombie->freezeSoundPlayed = false;
+            zombie->isWait = false;
             gameStatus[game_level].zombieCount ++;
         }
     }
+}
+
+/**
+ * 僵尸移动
+ * @param zombieIndex 要移动的僵尸下标
+ */
+void zombiesSwitchMovePic(int zombieIndex) {
+    bool waitFlag1 = zombies[zombieIndex].frameIndex > 0 && zombies[zombieIndex].frameIndex <= 2;
+    bool waitFlag2 = zombies[zombieIndex].frameIndex > 7 && zombies[zombieIndex].frameIndex <= 11;
+    bool waitFlag3 = zombies[zombieIndex].frameIndex > 13 && zombies[zombieIndex].frameIndex < 16;
+    if (waitFlag1 || waitFlag2 || waitFlag3) {
+        zombies[zombieIndex].isWait = true;
+    } else {
+        zombies[zombieIndex].isWait = false;
+    }
+    zombies[zombieIndex].frameIndex = (zombies[zombieIndex].frameIndex + 1) % AMOUNT_ZOMBIE_WALK_PIC;
 }
 
 /**
@@ -979,19 +998,17 @@ void updateZombies() {
             if (zombies[i].isUsed) {
                 //判定是否在攻击植物的状态
                 if (!zombies[i].eating) {
-                    if ((zombies[i].frameIndex > 0 && zombies[i].frameIndex < 14) ||
-                        (zombies[i].frameIndex > 16 && zombies[i].frameIndex < BASE_RES_PICS_AMOUNT - 2)) {
-                        static int freezeTimer = 0;
+                    if (!zombies[i].isWait) {
                         //判定是否受到寒冰射手的攻击
                         if (zombies[i].freeze) {
-                            freezeTimer ++;
+                            zombies[i].freezeWalkActionTimer ++;
                             //移动减缓
-                            if (freezeTimer > 4) {
-                                freezeTimer = 0;
+                            if (zombies[i].freezeWalkActionTimer > 1) {
+                                zombies[i].freezeWalkActionTimer = 0;
                                 zombies[i].x -= zombies[i].speed;
                             }
                         } else {
-                            //正常移动
+//                            //正常移动
                             zombies[i].x -= zombies[i].speed;
                         }
                         if (zombies[i].x <= LAND_MAP_END_X && !zombies[i].groan) {
@@ -1027,31 +1044,30 @@ void updateZombies() {
                         }
                     }
                 } else {
-                    static int freezeActionTimer = 0;
                     if (zombies[i].freeze && zombies[i].freezeTimer > 0) {
-                        freezeActionTimer ++;
                         zombies[i].freezeTimer -= 1;
                         //判定是否冻结状态
                         if (zombies[i].freezeTimer <= 0) {
-                            zombies[i].freezeTimer = 8;
+                            zombies[i].freezeTimer = 40;
                             zombies[i].freeze = false;
+                            zombies[i].freezeSoundPlayed = false;
                         } else {
-                            if (freezeActionTimer > 4) {
-                                freezeActionTimer = 0;
+                            if (!zombies[i].freezeSoundPlayed) {
+                                zombies[i].freezeSoundPlayed = true;
                                 playSound(SOUND_FROZEN);
-                                //通过判定是否攻击植物来切花图片下标
-                                if (zombies[i].eating) {
-                                    zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
-                                } else {
-                                    zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
-                                }
+                            }
+                            //通过判定是否攻击植物来切换图片下标
+                            if (zombies[i].eating) {
+                                zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
+                            } else {
+                                zombiesSwitchMovePic(i);
                             }
                         }
                     } else {
                         if (zombies[i].eating) {
                             zombies[i].frameIndex = (zombies[i].frameIndex + 1) % AMOUNT_ZOMBIE_ATTACK_PIC_1;
                         } else {
-                            zombies[i].frameIndex = (zombies[i].frameIndex + 1) % BASE_RES_PICS_AMOUNT;
+                            zombiesSwitchMovePic(i);
                         }
                     }
                 }
@@ -1216,7 +1232,7 @@ void checkBullet2Zombie() {
             if (!zombies[k].dead && bulletX >= zombieX1 && bulletX <= zombieX2 && snowBullets[i].row == zombies[k].row) {
                 zombies[k].hp -= 10;//默认伤害
                 zombies[k].freeze = true;
-                zombies[k].freezeTimer = 8;
+                zombies[k].freezeTimer = 40;//重置冻结计次
                 snowBullets[i].explosion = true;
                 snowBullets[i].speed = 0;
                 if (zombies[k].hp <= 40 && zombies[k].hp > 0) {
