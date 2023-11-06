@@ -84,6 +84,8 @@ using namespace std;
 
 //僵尸站立图片数量
 #define AMOUNT_ZOMBIE_STAND_PIC_1 5
+//僵尸行走图片数量
+#define AMOUNT_ZOMBIE_WALK_PIC 22
 //僵尸攻击图片数量
 #define AMOUNT_ZOMBIE_ATTACK_PIC_1 21
 //僵尸死亡图片数量
@@ -144,7 +146,7 @@ IMAGE* imgGlobalPlantsPics[PLANTS_COUNT + 3][BASE_RES_PICS_AMOUNT];
 //僵尸池
 struct Zombie zombies[10];
 //普通僵尸行走图片
-IMAGE imgZombiesPics[BASE_RES_PICS_AMOUNT];
+IMAGE imgZombiesPics[AMOUNT_ZOMBIE_WALK_PIC];
 //普通僵尸站立图片
 IMAGE imgZombiesStandPics[AMOUNT_ZOMBIE_STAND_PIC_1];
 //普通僵尸攻击图片
@@ -284,7 +286,7 @@ void gameInit() {
 
     //加载僵尸数据
     memset(zombies, 0, sizeof(zombies));
-    loadNormalZombieWalkPics(21);
+    loadNormalZombieWalkPics(AMOUNT_ZOMBIE_WALK_PIC);
     loadNormalZombieAttackPics(AMOUNT_ZOMBIE_ATTACK_PIC_1);
     loadNormalZombieStandPics(AMOUNT_ZOMBIE_STAND_PIC_1);
     loadNormalZombieDiePics(AMOUNT_ZOMBIE_DEAD_PIC_2);
@@ -695,8 +697,8 @@ void userClickEvent() {
                         clearPlantPointer(row, column);
                         playSound(SOUND_SHOVEL);
                     }
-                    dragShovel = false;
                 }
+                dragShovel = false;
             }
         }
     }
